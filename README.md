@@ -13,15 +13,7 @@ StudentProgress is a Spring Boot application for managing and tracking student d
 - 🌐 RESTful API design for easy integration
 - 🔗 HATEOAS support for enhanced API navigation
 - 🛠️ Database version control with Flyway
-
-## 🔧 Environment Variables
-To run this project, you need to set up the following environment variables:
-
-```plaintext
-DB_USERNAME=<your_database_username>
-DB_PASSWORD=<your_database_password>
-```
-
+  
 ## 🚀 Installation
 
 1. Clone the repository:
@@ -29,11 +21,22 @@ DB_PASSWORD=<your_database_password>
    git clone git@github.com:henriiqueaze/StudentProgress.git
    cd StudentProgress
    ```
-2. Configure environment variables.
-3. Build and run the application:
-   ```sh
-   mvn spring-boot:run
-   ```
+2. **Set up environment variables:**
+   Create a `.env` file and define your database credentials:
+    ```bash
+    DB_USERNAME=root
+    DB_PASSWORD=yourpassword
+    ```
+
+3. **Build the project:**
+    ```bash
+    mvn clean install
+    ```
+
+4. **Run the project:**
+    ```bash
+    mvn spring-boot:run
+    ```
 
 ## 🔗 API Endpoints
 - 🆕 `POST /student` - Register a new student
