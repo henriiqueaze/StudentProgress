@@ -14,7 +14,7 @@ StudentProgress is a Spring Boot application for managing and tracking student d
 - 🔗 HATEOAS support for enhanced API navigation
 - 🛠️ Database version control with Flyway
   
-## 🚀 Installation
+## 🚀 How to use
 
 1. Clone the repository:
    ```sh
