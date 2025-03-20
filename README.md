@@ -1,5 +1,5 @@
 # <p align="center">🎓 StudentProgress API 📊</p>
-<p>
+<p align="center">
   <img src="assets/images/Logo%20StudentProgress.png" alt="StudentProgress Logo">
 </p>
 
