@@ -11,3 +11,9 @@ spring:
     #properties:
       #hibernate.dialect: org.hibernate.dialect.MySQLDialect
     show-sql: false
+    spring-doc:
+      path-to-match:
+      - /**/**
+      - /**/average/**
+      swagger-ui:
+        use-root-path: true
