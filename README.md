@@ -7,9 +7,7 @@ StudentProgress is a Spring Boot application for managing and tracking student d
 
 ## ✨ Features
 - 📌 Register and update student records
-- 📊 Monitor academic performance in real-time
 - 🧮 Calculate grade averages automatically
-- 🔒 Secure authentication and authorization
 - 🌐 RESTful API design for easy integration
 - 🔗 HATEOAS support for enhanced API navigation
 - 🛠️ Database version control with Flyway
@@ -38,6 +36,11 @@ StudentProgress is a Spring Boot application for managing and tracking student d
     mvn spring-boot:run
     ```
 
+5. **Swagger Documentation: The API documentation is available via Swagger at:**
+    ```bash
+    http://localhost:8080/swagger-ui.html
+    ```
+
 ## 🔗 API Endpoints
 - 🆕 `POST /student` - Register a new student
 - 📄 `GET /student` - Retrieve student details
@@ -51,6 +54,7 @@ StudentProgress is a Spring Boot application for managing and tracking student d
 - 🏗️ Hibernate (ORM)
 - 🔗 HATEOAS (Hypermedia API support)
 - 📂 Flyway (Database migrations)
+- 📑 Swagger (for API documentation)
 
 ## 📜 License
 This project is licensed under the MIT License. Feel free to use and modify it according to your needs.
