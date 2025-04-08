@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
@@ -21,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: studentprogress-api
+    container_name: henriiqueaze/studentprogress:1.0.0
     depends_on:
       mysql:
         condition: service_healthy
