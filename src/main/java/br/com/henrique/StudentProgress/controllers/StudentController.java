@@ -1,5 +1,6 @@
 package br.com.henrique.StudentProgress.controllers;
 
+import br.com.henrique.StudentProgress.controllers.docs.StudentControllerDocs;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentAverageDTO;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
 import br.com.henrique.StudentProgress.services.StudentService;
@@ -14,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/student")
 @Tag(name = "Student", description = "Endpoints for Managing Students")
-public class StudentController implements br.com.henrique.StudentProgress.controllers.docs.StudentControllerDocs {
+public class StudentController implements StudentControllerDocs {
 
     @Autowired
     private StudentService service;
