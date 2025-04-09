@@ -58,6 +58,7 @@ This helps educational institutions streamline their processes efficiently.
 - 🗄️ MySQL (Database)  
 - 🏗️ Hibernate (ORM)  
 - 🔗 HATEOAS (Hypermedia API support)  
+- 🧪 JUnit (Testing framework) 
 - 📂 Flyway (Database migrations)  
 - 🐳 Docker & Docker Compose  
 - 📑 Swagger (API documentation)  
