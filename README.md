@@ -32,12 +32,18 @@ This helps educational institutions streamline their processes efficiently.
    cp .env.example .env
    ```
 
-3. **Run the application using Docker Compose:**
+3. **Build the application (.jar) with Maven:**
+   This step compiles the code and generates the .jar file inside the target/ folder:
+   ```bash
+   ./mvnw clean package
+   ```
+
+4. **Run the application using Docker Compose:**
    ```bash
    docker-compose up --build
    ```
 
-4. **Access the API documentation (Swagger):**
+5. **Access the API documentation (Swagger):**
    ```bash
    http://localhost:8080/swagger-ui.html
    ```
