@@ -3,6 +3,7 @@
 # ===============================
 HELP.md
 .env
+*.log
 
 # ===============================
 #     SPRING TOOL SUITE (STS)
@@ -11,14 +12,14 @@ HELP.md
 .classpath
 .factorypath
 .project
-.settings
+.settings/
 .springBeans
-.sts4-cache
+.sts4-cache/
 
 # ===============================
 #     INTELLIJ IDEA
 # ===============================
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -26,14 +27,11 @@ HELP.md
 # ===============================
 #     NETBEANS
 # ===============================
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/. nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+nb-gradle/
 
 # ===============================
 #     VISUAL STUDIO CODE
@@ -43,4 +41,8 @@ build/
 # ===============================
 #     MAVEN / GRADLE OUTPUT
 # ===============================
-/target/
+target/
+build/
+
+# Ignora relatórios de teste do Maven
+surefire-reports/
