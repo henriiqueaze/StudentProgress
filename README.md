@@ -59,6 +59,27 @@ This helps educational institutions streamline their processes efficiently.
 
 ---
 
+## 🌐 CORS Configuration
+
+This API supports **CORS (Cross-Origin Resource Sharing)** to enable integration with front-end applications hosted on different domains.
+
+CORS is configured globally in the backend using the following setup:
+- Allowed Origins: Defined via CORS_ALLOWED_ORIGINS
+- Allowed Methods: All (GET, POST, PUT, DELETE, etc.)
+- Credentials: Enabled (allowCredentials=true) — supports cookies and authorization headers
+
+In your .env file, define:
+```bash
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+   ```
+
+To allow multiple domains, separate them with commas:
+```bash
+CORS_ALLOWED_ORIGINS=http://localhost:3000,https://your-frontend.com
+   ```
+
+---
+
 ## 🛠️ Technologies Used
 - ☕ Java (Spring Boot)  
 - 🗄️ MySQL (Database)  
