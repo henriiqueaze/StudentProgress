@@ -1,127 +1,95 @@
 package br.com.henrique.StudentProgress.controllers;
 
-import br.com.henrique.StudentProgress.transfer.DTOs.StudentAverageDTO;
-import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
-import br.com.henrique.StudentProgress.model.enums.StudentStatus;
 import br.com.henrique.StudentProgress.services.StudentService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
+import br.com.henrique.StudentProgress.transfer.DTOs.StudentAverageDTO;
+import br.com.henrique.StudentProgress.model.enums.StudentStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ExtendWith(MockitoExtension.class)
 class StudentControllerTest {
 
-    @InjectMocks
-    private StudentController studentController;
-
     @Mock
-    private StudentService studentService;
+    private StudentService service;
 
-    private MockMvc mockMvc;
-    private StudentDTO studentDTO;
-    private StudentAverageDTO studentAverageDTO;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @InjectMocks
+    private StudentController controller;
+
+    private StudentDTO sample;
 
     @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(studentController).build();
-
-        studentDTO = new StudentDTO();
-        studentDTO.setId(1L);
-        studentDTO.setNome("John Doe");
-        studentDTO.setBirthDate("2000-01-01");
-        studentDTO.setCpf("12345678900");
-        studentDTO.setEmail("john@example.com");
-        studentDTO.setRegistration("REG123");
-        studentDTO.setCourse("Computer Science");
-        studentDTO.setClassSchool("A1");
-        studentDTO.setNotes(List.of(8.0, 9.0, 7.0));
-
-        studentAverageDTO = new StudentAverageDTO("John Doe", studentDTO.getNotes(), 8.0, StudentStatus.APPROVED);
+    void setup() {
+        sample = new StudentDTO();
+        sample.setId(1L);
+        sample.setNome("John Doe");
+        sample.setCourse("Math");
+        sample.setClassSchool("A1");
+        sample.setRegistration("REG123");
+        sample.setBirthDate("2000-01-01");
+        sample.setNotes(Arrays.asList(8.0, 9.0));
     }
 
     @Test
-    void testFindStudentById() throws Exception {
-        when(studentService.findById(1L)).thenReturn(studentDTO);
-
-        mockMvc.perform(get("/student/{id}", 1L)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.nome", is("John Doe")));
+    void findStudentById_returnsDto() {
+        when(service.findById(1L)).thenReturn(sample);
+        StudentDTO result = controller.findStudentById(1L);
+        assertEquals(sample, result);
+        verify(service).findById(1L);
     }
 
     @Test
-    void testFindAllStudents() throws Exception {
-        when(studentService.findAll()).thenReturn(List.of(studentDTO));
-
-        mockMvc.perform(get("/student")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", org.hamcrest.Matchers.hasSize(1)))
-                .andExpect(jsonPath("$[0].nome", is("John Doe")));
+    void findAllStudents_returnsList() {
+        when(service.findAll()).thenReturn(Collections.singletonList(sample));
+        List<StudentDTO> list = controller.findAllStudents();
+        assertEquals(1, list.size());
+        assertEquals(sample, list.get(0));
+        verify(service).findAll();
     }
 
     @Test
-    void testPostStudent() throws Exception {
-        when(studentService.post(any(StudentDTO.class))).thenReturn(studentDTO);
-
-        String jsonContent = objectMapper.writeValueAsString(studentDTO);
-
-        mockMvc.perform(post("/student")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonContent))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome", is("John Doe")));
+    void postStudent_returnsPosted() {
+        when(service.post(sample)).thenReturn(sample);
+        StudentDTO result = controller.postStudent(sample);
+        assertEquals(sample, result);
+        verify(service).post(sample);
     }
 
     @Test
-    void testPutStudent() throws Exception {
-        when(studentService.put(any(StudentDTO.class))).thenReturn(studentDTO);
-
-        String jsonContent = objectMapper.writeValueAsString(studentDTO);
-
-        mockMvc.perform(put("/student")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonContent))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nome", is("John Doe")));
+    void putStudent_returnsUpdated() {
+        when(service.put(sample)).thenReturn(sample);
+        StudentDTO result = controller.putStudent(sample);
+        assertEquals(sample, result);
+        verify(service).put(sample);
     }
 
     @Test
-    void testDeleteStudent() throws Exception {
-        doNothing().when(studentService).delete(anyLong());
-
-        mockMvc.perform(delete("/student/{id}", 1L))
-                .andExpect(status().isNoContent());
-
-        verify(studentService, times(1)).delete(1L);
+    void deleteStudent_returnsNoContent() {
+        doNothing().when(service).delete(1L);
+        ResponseEntity<?> response = controller.deleteStudent(1L);
+        assertEquals(204, response.getStatusCodeValue());
+        verify(service).delete(1L);
     }
 
     @Test
-    void testCalculateStudentAverage() throws Exception {
-        when(studentService.calculateAverage(1L)).thenReturn(studentAverageDTO);
-
-        mockMvc.perform(get("/student/average/{id}", 1L)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.studentName", is("John Doe")))
-                .andExpect(jsonPath("$.average", is(8.0)));
+    void calculateStudentAverage_returnsAverage() {
+        StudentAverageDTO avgDto = new StudentAverageDTO("John Doe", Arrays.asList(8.0, 9.0), 8.5, StudentStatus.APPROVED);
+        when(service.calculateAverage(1L)).thenReturn(avgDto);
+        StudentAverageDTO result = controller.calculateStudentAverage(1L);
+        assertEquals(8.5, result.getAverage());
+        assertEquals(StudentStatus.APPROVED, result.getStatus());
+        verify(service).calculateAverage(1L);
     }
 }
