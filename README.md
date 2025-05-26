@@ -83,7 +83,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,https://your-frontend.com
 
 ## 🛠️ Technologies Used
 - ☕ Java (Spring Boot)  
-- 🗄️ MySQL (Database)  
+- 🗄️ PostgreSQL (Database)  
 - 🏗️ Hibernate (ORM)  
 - 🔗 HATEOAS (Hypermedia API support)  
 - 🧪 JUnit (Testing framework) 
