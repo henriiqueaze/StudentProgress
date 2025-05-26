@@ -133,7 +133,7 @@ class StudentServiceTest {
         var avg = service.calculateAverage(1L);
         double expected = new BigDecimal(12).divide(new BigDecimal(2), 1, BigDecimal.ROUND_HALF_UP).doubleValue();
         assertEquals(expected, avg.getAverage());
-        assertEquals(StudentStatus.IN_PROGRESS, avg.getStatus());
+        assertEquals(StudentStatus.RECOVERY, avg.getStatus());
     }
 
     @Test
