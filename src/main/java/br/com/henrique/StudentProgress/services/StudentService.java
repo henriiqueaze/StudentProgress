@@ -1,6 +1,7 @@
 package br.com.henrique.StudentProgress.services;
 
 import br.com.henrique.StudentProgress.controllers.StudentController;
+import br.com.henrique.StudentProgress.exceptions.InvalidStatusExcepetion;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentAverageDTO;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
 import br.com.henrique.StudentProgress.exceptions.IdNotFoundException;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -111,10 +113,28 @@ public class StudentService {
             status = StudentStatus.FAILED;
         }
         else {
-            status = StudentStatus.IN_PROGRESS;
+            status = StudentStatus.RECOVERY;
         }
 
         return new StudentAverageDTO(entity.getNome(), entity.getNotes(), average.doubleValue(), status);
+    }
+
+    public List<StudentAverageDTO> filterByStatus(StudentStatus status) {
+        if (status == null) {
+            throw new InvalidStatusExcepetion("The provided status is invalid or null");
+        }
+
+        List<StudentAverageDTO> filtered = new ArrayList<>();
+        var studentList = repository.findAll();
+
+        for (Student student : studentList) {
+            StudentAverageDTO averageDTO = calculateAverage(student.getId());
+
+            if (averageDTO.getStatus() == status) {
+                filtered.add(averageDTO);
+            }
+        }
+        return filtered;
     }
 
     private void addHateoasLinks(StudentDTO student) {

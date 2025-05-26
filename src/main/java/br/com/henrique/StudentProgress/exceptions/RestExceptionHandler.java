@@ -34,4 +34,10 @@ public class RestExceptionHandler {
         RestErrorMessage threatMessage = new RestErrorMessage(LocalDateTime.now(), HttpStatus.BAD_REQUEST, "Missing required fields", "Mandatory fields are missing", request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(threatMessage);
     }
+
+    @ExceptionHandler(InvalidStatusExcepetion.class)
+    private ResponseEntity<RestErrorMessage> handleInvalidStatusException(InvalidStatusExcepetion exception, HttpServletRequest request) {
+        RestErrorMessage threatMessage = new RestErrorMessage(LocalDateTime.now(), HttpStatus.BAD_REQUEST, "Invalid Status", "The provided status is invalid or null", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(threatMessage);
+    }
 }
