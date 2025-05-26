@@ -1,6 +1,5 @@
 package br.com.henrique.StudentProgress.controllers.docs;
 
-import br.com.henrique.StudentProgress.model.enums.StudentStatus;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentAverageDTO;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
 import io.swagger.v3.oas.annotations.Operation;
