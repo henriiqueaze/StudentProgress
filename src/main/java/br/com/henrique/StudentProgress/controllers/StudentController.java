@@ -1,6 +1,7 @@
 package br.com.henrique.StudentProgress.controllers;
 
 import br.com.henrique.StudentProgress.controllers.docs.StudentControllerDocs;
+import br.com.henrique.StudentProgress.model.enums.StudentStatus;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentAverageDTO;
 import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
 import br.com.henrique.StudentProgress.services.StudentService;
@@ -55,5 +56,12 @@ public class StudentController implements StudentControllerDocs {
     @Override
     public StudentAverageDTO calculateStudentAverage(@PathVariable Long id) {
         return service.calculateAverage(id);
+    }
+
+    @GetMapping(value = "/filter/{statusString}", produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @Override
+    public List<StudentAverageDTO> filterStudentsByStatus (@PathVariable String statusString) {
+        StudentStatus status = StudentStatus.valueOf(statusString);
+        return service.filterByStatus(status);
     }
 }
