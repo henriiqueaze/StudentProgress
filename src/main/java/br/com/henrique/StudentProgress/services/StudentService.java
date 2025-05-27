@@ -72,7 +72,7 @@ public class StudentService {
         entity.setId(student.getId());
         entity.setEmail(student.getEmail());
         entity.setCourse(student.getCourse());
-        entity.setNome(student.getNome());
+        entity.setName(student.getName());
         entity.setBirthDate(student.getBirthDate());
         entity.setClassSchool(student.getClassSchool());
         entity.setNotes(student.getNotes());
@@ -101,7 +101,7 @@ public class StudentService {
             throw new IllegalArgumentException("Student has no grades to calculate the average.");
         }
 
-        BigDecimal sum = entity.getNotes().stream().map(BigDecimal::new).reduce(BigDecimal.ZERO, BigDecimal::add);  // Somando as notas
+        BigDecimal sum = entity.getNotes().stream().map(BigDecimal::new).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal average = sum.divide(new BigDecimal(entity.getNotes().size()), 1, RoundingMode.HALF_UP);
 
@@ -116,7 +116,7 @@ public class StudentService {
             status = StudentStatus.RECOVERY;
         }
 
-        return new StudentAverageDTO(entity.getNome(), entity.getNotes(), average.doubleValue(), status);
+        return new StudentAverageDTO(entity.getName(), entity.getNotes(), average.doubleValue(), status);
     }
 
     public List<StudentAverageDTO> filterByStatus(StudentStatus status) {
@@ -148,7 +148,7 @@ public class StudentService {
     private void validateStudentFields(StudentDTO student) {
         if (student.getNotes() == null || student.getNotes().isEmpty() ||
                 student.getBirthDate() == null || student.getBirthDate().isBlank() ||
-                student.getNome() == null || student.getNome().isBlank() ||
+                student.getName() == null || student.getName().isBlank() ||
                 student.getCourse() == null || student.getCourse().isBlank() ||
                 student.getClassSchool() == null || student.getClassSchool().isBlank() ||
                 student.getRegistration() == null || student.getRegistration().isBlank())
