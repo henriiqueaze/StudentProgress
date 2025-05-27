@@ -38,7 +38,7 @@ class StudentServiceTest {
     void setup() {
         entity = new Student();
         entity.setId(1L);
-        entity.setNome("Jane");
+        entity.setName("Jane");
         entity.setCourse("Science");
         entity.setClassSchool("B2");
         entity.setRegistration("REG456");

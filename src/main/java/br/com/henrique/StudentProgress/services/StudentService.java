@@ -72,7 +72,7 @@ public class StudentService {
         entity.setId(student.getId());
         entity.setEmail(student.getEmail());
         entity.setCourse(student.getCourse());
-        entity.setNome(student.getName());
+        entity.setName(student.getName());
         entity.setBirthDate(student.getBirthDate());
         entity.setClassSchool(student.getClassSchool());
         entity.setNotes(student.getNotes());
