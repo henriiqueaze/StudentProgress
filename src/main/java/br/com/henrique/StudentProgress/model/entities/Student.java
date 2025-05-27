@@ -13,7 +13,7 @@ public class Student {
     private Long id;
 
     @Column(name = "name", nullable = false)
-    private String nome;
+    private String name;
 
     @Column(name = "birthDate", nullable = false)
     private String birthDate;
@@ -47,12 +47,12 @@ public class Student {
         this.id = id;
     }
 
-    public String getNome() {
-        return nome;
+    public String getName() {
+        return name;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setNome(String name) {
+        this.name = name;
     }
 
     public String getBirthDate() {

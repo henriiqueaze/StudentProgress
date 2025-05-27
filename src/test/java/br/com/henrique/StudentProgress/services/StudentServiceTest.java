@@ -47,7 +47,7 @@ class StudentServiceTest {
 
         dto = new StudentDTO();
         dto.setId(1L);
-        dto.setNome("Jane");
+        dto.setName("Jane");
         dto.setCourse("Science");
         dto.setClassSchool("B2");
         dto.setRegistration("REG456");
@@ -59,7 +59,7 @@ class StudentServiceTest {
     void findById_returnsDto() {
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
         var result = service.findById(1L);
-        assertEquals(dto.getNome(), result.getNome());
+        assertEquals(dto.getName(), result.getName());
         verify(repository).findById(1L);
     }
 
@@ -81,7 +81,7 @@ class StudentServiceTest {
     void post_valid_returnsDto() {
         when(repository.save(any(Student.class))).thenReturn(entity);
         var result = service.post(dto);
-        assertEquals(dto.getNome(), result.getNome());
+        assertEquals(dto.getName(), result.getName());
         verify(repository).save(any(Student.class));
     }
 
@@ -102,7 +102,7 @@ class StudentServiceTest {
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
         when(repository.save(entity)).thenReturn(entity);
         var result = service.put(dto);
-        assertEquals(dto.getNome(), result.getNome());
+        assertEquals(dto.getName(), result.getName());
         verify(repository).findById(1L);
         verify(repository).save(entity);
     }

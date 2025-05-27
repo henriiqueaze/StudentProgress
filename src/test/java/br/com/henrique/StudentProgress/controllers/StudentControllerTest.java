@@ -34,7 +34,7 @@ class StudentControllerTest {
     void setup() {
         sample = new StudentDTO();
         sample.setId(1L);
-        sample.setNome("John Doe");
+        sample.setName("John Doe");
         sample.setCourse("Math");
         sample.setClassSchool("A1");
         sample.setRegistration("REG123");
