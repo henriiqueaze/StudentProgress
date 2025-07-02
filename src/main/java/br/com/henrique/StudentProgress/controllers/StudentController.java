@@ -36,9 +36,9 @@ public class StudentController implements StudentControllerDocs {
 
     @PostMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
     @Override
-    public StudentDTO postStudent(@RequestBody StudentDTO student) {
+    public ResponseEntity<StudentDTO> postStudent(@RequestBody StudentDTO student) {
         var entity = service.post(student);
-        return ResponseEntity.status(HttpStatus.CREATED).body(entity).getBody();
+        return ResponseEntity.status(HttpStatus.CREATED).body(entity);
     }
 
     @PutMapping(produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})

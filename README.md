@@ -26,24 +26,35 @@ This helps educational institutions streamline their processes efficiently.
    cd StudentProgress
    ```
 
-2. **Set up environment variables:**
+2. **Create the MySQL database:**
+   Before running the application, make sure you have a MySQL server running locally or accessible remotely, 
+   and create the database used by the app:
+   ```bash
+   CREATE DATABASE student_progress;
+   ```
+
+3. **Set up environment variables:**
    Copy the example file and customize it:
    ```bash
    cp .env.example .env
    ```
+   Make sure the SPRING_DATASOURCE_URL points to your MySQL server host and port, for example:
+   ```bash
+   jdbc:mysql://localhost:3306/student_progress?useSSL=false
+   ```
 
-3. **Build the application (.jar) with Maven:**
+4. **Build the application (.jar) with Maven:**
    This step compiles the code and generates the .jar file inside the target/ folder:
    ```bash
    ./mvnw clean package
    ```
 
-4. **Run the application using Docker Compose:**
+5. **Run the application using Docker Compose:**
    ```bash
    docker-compose up --build
    ```
 
-5. **Access the API documentation (Swagger):**
+6. **Access the API documentation (Swagger):**
    ```bash
    http://localhost:8080/swagger-ui.html
    ```
@@ -71,12 +82,12 @@ CORS is configured globally in the backend using the following setup:
 
 In your .env file, define:
 ```bash
-CORS_ALLOWED_ORIGINS=http://localhost:3000
+CORS_ALLOWED_ORIGINS=http://localhost:8080
    ```
 
 To allow multiple domains, separate them with commas:
 ```bash
-CORS_ALLOWED_ORIGINS=http://localhost:3000,https://your-frontend.com
+CORS_ALLOWED_ORIGINS=http://localhost:8080,https://your-frontend.com
    ```
 
 ---

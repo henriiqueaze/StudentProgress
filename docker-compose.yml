@@ -1,26 +1,7 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: studentprogress-db
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-    ports:
-      - "3306:3306"
-    networks:
-      - studentprogress-net
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   studentprogress-api:
     image: henriqueaze/studentprogress:latest
     container_name: studentprogress-api
-    depends_on:
-      mysql:
-        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}

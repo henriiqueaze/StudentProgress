@@ -47,7 +47,7 @@ public interface StudentControllerDocs {
                     @ApiResponse(description = "Not Found", responseCode = "404", content = @Content),
                     @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
             })
-    StudentDTO postStudent(@RequestBody StudentDTO student);
+    ResponseEntity<StudentDTO> postStudent(@RequestBody StudentDTO student);
 
     @Operation(summary = "Puts a Student", description = "Updates a Student", tags = {"Student"},
             responses = {
