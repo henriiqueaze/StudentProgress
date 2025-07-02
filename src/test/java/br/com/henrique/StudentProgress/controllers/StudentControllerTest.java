@@ -62,7 +62,7 @@ class StudentControllerTest {
     @Test
     void postStudent_returnsPosted() {
         when(service.post(sample)).thenReturn(sample);
-        StudentDTO result = controller.postStudent(sample);
+        StudentDTO result = controller.postStudent(sample).getBody();
         assertEquals(sample, result);
         verify(service).post(sample);
     }
