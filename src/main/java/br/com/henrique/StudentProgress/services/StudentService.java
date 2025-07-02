@@ -24,6 +24,7 @@ import java.util.List;
 
 @Service
 public class StudentService {
+
     @Autowired
     private StudentRepository repository;
 
@@ -98,7 +99,7 @@ public class StudentService {
         var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
 
         if (entity.getNotes() == null || entity.getNotes().isEmpty()) {
-            throw new IllegalArgumentException("Student has no grades to calculate the average.");
+            throw new IllegalArgumentException("Student has no grades to calculate the average");
         }
 
         BigDecimal sum = entity.getNotes().stream().map(BigDecimal::new).reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -153,7 +154,7 @@ public class StudentService {
                 student.getClassSchool() == null || student.getClassSchool().isBlank() ||
                 student.getRegistration() == null || student.getRegistration().isBlank())
         {
-            throw new MissingRequiredFieldException("Obrigatory fields are missing");
+            throw new MissingRequiredFieldException("Mandatory fields are missing");
         }
     }
 }

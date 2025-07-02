@@ -40,7 +40,7 @@ public interface StudentControllerDocs {
 
     @Operation(summary = "Posts a Student", description = "Create a Student", tags = {"Student"},
             responses = {
-                    @ApiResponse(description = "Success", responseCode = "200", content = {
+                    @ApiResponse(description = "Created", responseCode = "201", content = {
                             @Content(schema = @Schema(implementation = StudentDTO.class)) }),
                     @ApiResponse(description = "No Content", responseCode = "204", content = @Content),
                     @ApiResponse(description = "Unauthorized", responseCode = "401", content = @Content),
