@@ -44,11 +44,7 @@ public class StudentService {
 
     public StudentDTO post(StudentDTO student) {
         validateStudentFields(student);
-        for (Double note : student.getNotes()) {
-            if (note < 0 || note > 10) {
-                throw new InvalidGradeException("Grade must be between 0 and 10.");
-            }
-        }
+        validateStudentNotes(student);
 
         var entity = Mapper.parseObjects(student, Student.class);
         repository.save(entity);
@@ -61,23 +57,25 @@ public class StudentService {
 
     public StudentDTO put(StudentDTO student) {
         validateStudentFields(student);
-        for (Double note : student.getNotes()) {
-            if (note < 0 || note > 10) {
-                throw new InvalidGradeException("Grade must be between 0 and 10.");
-            }
-        }
+        validateStudentNotes(student);
 
         var entity = repository.findById(student.getId()).orElseThrow(() -> new IdNotFoundException("Id not found"));
 
-        entity.setCpf(student.getCpf());
-        entity.setId(student.getId());
-        entity.setEmail(student.getEmail());
-        entity.setCourse(student.getCourse());
-        entity.setName(student.getName());
-        entity.setBirthDate(student.getBirthDate());
-        entity.setClassSchool(student.getClassSchool());
-        entity.setNotes(student.getNotes());
-        entity.setRegistration(student.getRegistration());
+        Mapper.mapNonNullFields(student, entity);
+
+        repository.save(entity);
+
+        var dto = Mapper.parseObjects(entity, StudentDTO.class);
+        addHateoasLinks(dto);
+
+        return dto;
+    }
+
+    public StudentDTO patch(Long id, StudentDTO student) {
+        validateStudentNotes(student);
+
+        var entity = repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found"));
+        Mapper.mapNonNullFields(student, entity);
 
         repository.save(entity);
 
@@ -103,7 +101,6 @@ public class StudentService {
         }
 
         BigDecimal sum = entity.getNotes().stream().map(BigDecimal::new).reduce(BigDecimal.ZERO, BigDecimal::add);
-
         BigDecimal average = sum.divide(new BigDecimal(entity.getNotes().size()), 1, RoundingMode.HALF_UP);
 
         StudentStatus status;
@@ -155,6 +152,16 @@ public class StudentService {
                 student.getRegistration() == null || student.getRegistration().isBlank())
         {
             throw new MissingRequiredFieldException("Mandatory fields are missing");
+        }
+    }
+
+    private void validateStudentNotes(StudentDTO student) {
+        if (student.getNotes() != null) {
+            for (Double note : student.getNotes()) {
+                if (note < 0 || note > 10) {
+                    throw new InvalidGradeException("Grade must be between 0 and 10.");
+                }
+            }
         }
     }
 }

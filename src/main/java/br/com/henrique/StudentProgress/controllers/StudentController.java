@@ -47,6 +47,12 @@ public class StudentController implements StudentControllerDocs {
         return service.put(student);
     }
 
+    @PatchMapping(value = {"/{id}"}, produces = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE}, consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE, MediaType.APPLICATION_YAML_VALUE})
+    @Override
+    public StudentDTO patchStudent(@PathVariable Long id, @RequestBody StudentDTO student) {
+        return service.patch(id, student);
+    }
+
     @DeleteMapping(value = "/{id}")
     @Override
     public ResponseEntity<?> deleteStudent(@PathVariable Long id) {

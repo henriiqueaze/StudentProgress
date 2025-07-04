@@ -60,6 +60,17 @@ public interface StudentControllerDocs {
             })
     StudentDTO putStudent(@RequestBody StudentDTO student);
 
+    @Operation(summary = "Patch a Student", description = "Updates a field from a specific Student", tags = {"Student"},
+            responses = {
+                    @ApiResponse(description = "Success", responseCode = "200", content = {
+                            @Content(schema = @Schema(implementation = StudentDTO.class)) }),
+                    @ApiResponse(description = "No Content", responseCode = "204", content = @Content),
+                    @ApiResponse(description = "Unauthorized", responseCode = "401", content = @Content),
+                    @ApiResponse(description = "Not Found", responseCode = "404", content = @Content),
+                    @ApiResponse(description = "Internal Server Error", responseCode = "500", content = @Content)
+            })
+    StudentDTO patchStudent(@PathVariable Long id ,@RequestBody StudentDTO student);
+
     @Operation(summary = "Deletes a Student", description = "Deletes a Student", tags = {"Student"},
             responses = {
                     @ApiResponse(description = "No Content", responseCode = "204", content = @Content),
