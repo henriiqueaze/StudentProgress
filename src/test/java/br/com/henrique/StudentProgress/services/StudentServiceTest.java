@@ -1,12 +1,15 @@
 package br.com.henrique.StudentProgress.services;
 
-import br.com.henrique.StudentProgress.model.entities.Student;
-import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
-import br.com.henrique.StudentProgress.model.enums.StudentStatus;
-import br.com.henrique.StudentProgress.infra.repositories.StudentRepository;
+import br.com.henrique.StudentProgress.controllers.StudentController;
 import br.com.henrique.StudentProgress.exceptions.IdNotFoundException;
 import br.com.henrique.StudentProgress.exceptions.InvalidGradeException;
+import br.com.henrique.StudentProgress.exceptions.InvalidStatusExcepetion;
 import br.com.henrique.StudentProgress.exceptions.MissingRequiredFieldException;
+import br.com.henrique.StudentProgress.infra.repositories.StudentRepository;
+import br.com.henrique.StudentProgress.model.entities.Student;
+import br.com.henrique.StudentProgress.model.enums.StudentStatus;
+import br.com.henrique.StudentProgress.transfer.DTOs.StudentDTO;
+import br.com.henrique.StudentProgress.transfer.DTOs.StudentAverageDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,10 +17,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -114,6 +117,30 @@ class StudentServiceTest {
     }
 
     @Test
+    void patch_valid_updatesPartial() {
+        when(repository.findById(1L)).thenReturn(Optional.of(entity));
+        StudentDTO patchDto = new StudentDTO();
+        patchDto.setName("John");
+        var result = service.patch(1L, patchDto);
+        assertEquals("John", result.getName());
+        assertEquals(entity.getCourse(), result.getCourse());
+        verify(repository).findById(1L);
+        verify(repository).save(entity);
+    }
+
+    @Test
+    void patch_invalidGrade_throws() {
+        StudentDTO patchDto = new StudentDTO();
+        patchDto.setNotes(Arrays.asList(11.0));
+
+        assertThrows(InvalidGradeException.class, () -> service.patch(1L, patchDto));
+
+        verify(repository, never()).findById(anyLong());
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
     void delete_existing_deletes() {
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
         doNothing().when(repository).delete(entity);
@@ -128,12 +155,18 @@ class StudentServiceTest {
     }
 
     @Test
-    void calculateAverage_approved() {
+    void calculateAverage_approvedAndRecoveryAndFailed() {
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
         var avg = service.calculateAverage(1L);
-        double expected = new BigDecimal(12).divide(new BigDecimal(2), 1, BigDecimal.ROUND_HALF_UP).doubleValue();
-        assertEquals(expected, avg.getAverage());
         assertEquals(StudentStatus.RECOVERY, avg.getStatus());
+
+        entity.setNotes(Arrays.asList(8.0, 7.0, 9.0));
+        avg = service.calculateAverage(1L);
+        assertEquals(StudentStatus.APPROVED, avg.getStatus());
+
+        entity.setNotes(Arrays.asList(2.0, 3.0));
+        avg = service.calculateAverage(1L);
+        assertEquals(StudentStatus.FAILED, avg.getStatus());
     }
 
     @Test
@@ -147,5 +180,33 @@ class StudentServiceTest {
     void calculateAverage_notFound_throws() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
         assertThrows(IdNotFoundException.class, () -> service.calculateAverage(1L));
+    }
+
+    @Test
+    void filterByStatus_validFilters() {
+        Student s1 = new Student(); s1.setId(1L); s1.setNotes(Arrays.asList(8.0, 9.0)); s1.setName("A");
+        Student s2 = new Student(); s2.setId(2L); s2.setNotes(Arrays.asList(5.0, 6.0)); s2.setName("B");
+        Student s3 = new Student(); s3.setId(3L); s3.setNotes(Arrays.asList(2.0, 3.0)); s3.setName("C");
+        when(repository.findAll()).thenReturn(Arrays.asList(s1, s2, s3));
+        when(repository.findById(1L)).thenReturn(Optional.of(s1));
+        when(repository.findById(2L)).thenReturn(Optional.of(s2));
+        when(repository.findById(3L)).thenReturn(Optional.of(s3));
+
+        List<StudentAverageDTO> approved = service.filterByStatus(StudentStatus.APPROVED);
+        assertEquals(1, approved.size());
+        assertEquals(StudentStatus.APPROVED, approved.get(0).getStatus());
+
+        List<StudentAverageDTO> recovery = service.filterByStatus(StudentStatus.RECOVERY);
+        assertEquals(1, recovery.size());
+        assertEquals(StudentStatus.RECOVERY, recovery.get(0).getStatus());
+
+        List<StudentAverageDTO> failed = service.filterByStatus(StudentStatus.FAILED);
+        assertEquals(1, failed.size());
+        assertEquals(StudentStatus.FAILED, failed.get(0).getStatus());
+    }
+
+    @Test
+    void filterByStatus_nullStatus_throws() {
+        assertThrows(InvalidStatusExcepetion.class, () -> service.filterByStatus(null));
     }
 }

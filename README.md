@@ -65,6 +65,7 @@ This helps educational institutions streamline their processes efficiently.
 - 🆕 `POST /student` - Register a new student  
 - 📄 `GET /student` - Retrieve student details  
 - ✏️ `PUT /student` - Update student information  
+- 🖊️ `PATCH /student/{id}` - Update a student a specific information
 - ❌ `DELETE /student` - Remove a student record  
 - 📊 `GET /student/average/{id}` - Get student grade average
 - 🧮 `GET /student/filter/{status}` — Filter students by academic status

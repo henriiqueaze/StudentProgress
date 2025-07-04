@@ -28,51 +28,79 @@ class StudentControllerTest {
     @InjectMocks
     private StudentController controller;
 
-    private StudentDTO sample;
+    private StudentDTO sampleDto;
+    private StudentAverageDTO sampleAvgDto;
 
     @BeforeEach
     void setup() {
-        sample = new StudentDTO();
-        sample.setId(1L);
-        sample.setName("John Doe");
-        sample.setCourse("Math");
-        sample.setClassSchool("A1");
-        sample.setRegistration("REG123");
-        sample.setBirthDate("2000-01-01");
-        sample.setNotes(Arrays.asList(8.0, 9.0));
+        sampleDto = new StudentDTO();
+        sampleDto.setId(1L);
+        sampleDto.setName("John Doe");
+        sampleDto.setCourse("Math");
+        sampleDto.setClassSchool("A1");
+        sampleDto.setRegistration("REG123");
+        sampleDto.setBirthDate("2000-01-01");
+        sampleDto.setNotes(Arrays.asList(8.0, 9.0));
+
+        sampleAvgDto = new StudentAverageDTO(
+                "John Doe",
+                Arrays.asList(8.0, 9.0),
+                8.5,
+                StudentStatus.APPROVED
+        );
     }
 
     @Test
     void findStudentById_returnsDto() {
-        when(service.findById(1L)).thenReturn(sample);
+        when(service.findById(1L)).thenReturn(sampleDto);
         StudentDTO result = controller.findStudentById(1L);
-        assertEquals(sample, result);
+        assertEquals(sampleDto, result);
         verify(service).findById(1L);
     }
 
     @Test
     void findAllStudents_returnsList() {
-        when(service.findAll()).thenReturn(Collections.singletonList(sample));
+        when(service.findAll()).thenReturn(Collections.singletonList(sampleDto));
         List<StudentDTO> list = controller.findAllStudents();
         assertEquals(1, list.size());
-        assertEquals(sample, list.get(0));
+        assertEquals(sampleDto, list.get(0));
         verify(service).findAll();
     }
 
     @Test
-    void postStudent_returnsPosted() {
-        when(service.post(sample)).thenReturn(sample);
-        StudentDTO result = controller.postStudent(sample).getBody();
-        assertEquals(sample, result);
-        verify(service).post(sample);
+    void postStudent_returnsCreated() {
+        when(service.post(sampleDto)).thenReturn(sampleDto);
+        ResponseEntity<StudentDTO> response = controller.postStudent(sampleDto);
+        assertEquals(201, response.getStatusCodeValue());
+        assertEquals(sampleDto, response.getBody());
+        verify(service).post(sampleDto);
     }
 
     @Test
     void putStudent_returnsUpdated() {
-        when(service.put(sample)).thenReturn(sample);
-        StudentDTO result = controller.putStudent(sample);
-        assertEquals(sample, result);
-        verify(service).put(sample);
+        when(service.put(sampleDto)).thenReturn(sampleDto);
+        StudentDTO result = controller.putStudent(sampleDto);
+        assertEquals(sampleDto, result);
+        verify(service).put(sampleDto);
+    }
+
+    @Test
+    void patchStudent_returnsPatched() {
+        StudentDTO patchDto = new StudentDTO();
+        patchDto.setName("Jane Smith");
+        StudentDTO patchedDto = new StudentDTO();
+        patchedDto.setId(1L);
+        patchedDto.setName("Jane Smith");
+        patchedDto.setCourse(sampleDto.getCourse());
+        patchedDto.setClassSchool(sampleDto.getClassSchool());
+        patchedDto.setRegistration(sampleDto.getRegistration());
+        patchedDto.setBirthDate(sampleDto.getBirthDate());
+        patchedDto.setNotes(sampleDto.getNotes());
+
+        when(service.patch(1L, patchDto)).thenReturn(patchedDto);
+        StudentDTO result = controller.patchStudent(1L, patchDto);
+        assertEquals("Jane Smith", result.getName());
+        verify(service).patch(1L, patchDto);
     }
 
     @Test
@@ -85,11 +113,23 @@ class StudentControllerTest {
 
     @Test
     void calculateStudentAverage_returnsAverage() {
-        StudentAverageDTO avgDto = new StudentAverageDTO("John Doe", Arrays.asList(8.0, 9.0), 8.5, StudentStatus.APPROVED);
-        when(service.calculateAverage(1L)).thenReturn(avgDto);
+        when(service.calculateAverage(1L)).thenReturn(sampleAvgDto);
         StudentAverageDTO result = controller.calculateStudentAverage(1L);
-        assertEquals(8.5, result.getAverage());
-        assertEquals(StudentStatus.APPROVED, result.getStatus());
+        assertEquals(sampleAvgDto, result);
         verify(service).calculateAverage(1L);
+    }
+
+    @Test
+    void filterStudentsByStatus_validStatus_returnsList() {
+        when(service.filterByStatus(StudentStatus.APPROVED)).thenReturn(Collections.singletonList(sampleAvgDto));
+        List<StudentAverageDTO> list = controller.filterStudentsByStatus("APPROVED");
+        assertEquals(1, list.size());
+        assertEquals(StudentStatus.APPROVED, list.get(0).getStatus());
+        verify(service).filterByStatus(StudentStatus.APPROVED);
+    }
+
+    @Test
+    void filterStudentsByStatus_invalidStatus_throwsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> controller.filterStudentsByStatus("UNKNOWN"));
     }
 }

@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 
 @ControllerAdvice
 public class RestExceptionHandler {
-
     @ExceptionHandler(Exception.class)
     private ResponseEntity<RestErrorMessage> exceptionHandler(Exception exception, HttpServletRequest request) {
         RestErrorMessage threatMessage = new RestErrorMessage(LocalDateTime.now(), HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", "An unexpected error occurred. Please try again later.", request.getRequestURI());
