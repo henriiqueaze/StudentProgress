@@ -137,10 +137,11 @@ public class StudentService {
 
     private void addHateoasLinks(StudentDTO student) {
         student.add(linkTo(methodOn(StudentController.class).findStudentById(student.getId())).withSelfRel().withType("GET"));
-        student.add(linkTo(methodOn(StudentController.class).deleteStudent(student.getId())).withRel("delete").withType("DELETE"));
         student.add(linkTo(methodOn(StudentController.class).findAllStudents()).withRel("findAll").withType("GET"));
-        student.add(linkTo(methodOn(StudentController.class).postStudent(student)).withRel("post").withType("POST"));
-        student.add(linkTo(methodOn(StudentController.class).putStudent(student)).withRel("put").withType("PUT"));
+        student.add(linkTo(methodOn(StudentController.class).postStudent(student)).withRel("create").withType("POST"));
+        student.add(linkTo(methodOn(StudentController.class).putStudent(student)).withRel("update").withType("PUT"));
+        student.add(linkTo(methodOn(StudentController.class).patchStudent(student.getId(), student)).withRel("patch").withType("PATCH"));
+        student.add(linkTo(methodOn(StudentController.class).deleteStudent(student.getId())).withRel("delete").withType("DELETE"));
     }
 
     private void validateStudentFields(StudentDTO student) {
