@@ -1,6 +1,6 @@
 # <p align="center">🎓 StudentProgress API 📊</p>
 <p align="center">
-  <img src="assets/images/Logo%20StudentProgress.png" alt="StudentProgress Logo">
+  <img src="assets/images/Logo%20StudentProgress.png" alt="StudentProgress Logo" width="300">
 </p>
 
 **StudentProgress** is a Spring Boot application for managing and tracking student data, including grades and academic status.  
