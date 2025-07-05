@@ -10,9 +10,9 @@ This helps educational institutions streamline their processes efficiently.
 ---
 
 ## ✨ Features
-- 📌 Register and update student records
+- 📌 Full CRUD operations for student records in the database
+- 🎯 Filter students by academic status
 - 🧮 Automatically calculate grade averages
-- 🌐 RESTful API design for easy integration
 - 🔗 HATEOAS support for enhanced API navigation
 - 🛠️ Database version control with Flyway
 
@@ -62,12 +62,13 @@ This helps educational institutions streamline their processes efficiently.
 ---
 
 ## 🔗 API Endpoints
+- 📄 `GET /student/id` - Retrieve details of a specific student
+- 📝 `GET /student` - Retrieve all students details  
 - 🆕 `POST /student` - Register a new student  
-- 📄 `GET /student` - Retrieve student details  
 - ✏️ `PUT /student` - Update student information  
-- 🖊️ `PATCH /student/{id}` - Update a student a specific information
-- ❌ `DELETE /student` - Remove a student record  
-- 📊 `GET /student/average/{id}` - Get student grade average
+- 🖊️ `PATCH /student/id` - Update a student a specific information
+- ❌ `DELETE /student/id` - Remove a student record  
+- 📊 `GET /student/average/id` - Get the grade point average of a specific student
 - 🧮 `GET /student/filter/{status}` — Filter students by academic status
 
 ---
@@ -78,7 +79,7 @@ This API supports **CORS (Cross-Origin Resource Sharing)** to enable integration
 
 CORS is configured globally in the backend using the following setup:
 - Allowed Origins: Defined via CORS_ALLOWED_ORIGINS
-- Allowed Methods: All (GET, POST, PUT, DELETE, etc.)
+- Allowed Methods: All (GET, POST, PUT, PATCH, DELETE, etc.)
 - Credentials: Enabled (allowCredentials=true) — supports cookies and authorization headers
 
 In your .env file, define:
