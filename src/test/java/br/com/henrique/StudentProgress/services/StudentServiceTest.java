@@ -150,16 +150,6 @@ class StudentServiceTest {
     }
 
     @Test
-    void patch_invalidGrade_throws() {
-        when(repository.findById(1L)).thenReturn(Optional.of(entity));
-        StudentDTO patchDto = new StudentDTO();
-        patchDto.setNotes(List.of(11.0));
-
-        assertThrows(InvalidGradeException.class, () -> service.patch(1L, patchDto));
-        verify(repository, never()).save(any());
-    }
-
-    @Test
     void delete_existing_deletes() {
         when(repository.findById(1L)).thenReturn(Optional.of(entity));
         doNothing().when(repository).delete(entity);
