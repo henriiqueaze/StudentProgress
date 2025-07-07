@@ -14,6 +14,7 @@ This helps educational institutions streamline their processes efficiently.
 - 🎯 Filter students by academic status
 - 🧮 Automatically calculate grade averages
 - 🔗 HATEOAS support for enhanced API navigation
+- 📄 Pagination and pageable search for student lists
 - 🛠️ Database version control with Flyway
 
 ---
@@ -62,9 +63,18 @@ This helps educational institutions streamline their processes efficiently.
 ---
 
 ## 🔗 API Endpoints
-- 📄 `GET /student/id` - Retrieve details of a specific student
-- 📝 `GET /student` - Retrieve all students details  
-- 🆕 `POST /student` - Register a new student  
+- 📄 `GET /student/{id}` - Retrieve a specific student details
+- 📥 `GET /student` - Retrieve all student details. Optional query parameters for pagination:
+  - page: page number (default: 0)
+  - size: number of records per page (default: 12)
+  - direction: sorting direction, asc or desc (default: asc)
+    - Example:
+
+   ```bash
+   GET /student?page=0&size=10&direction=desc
+   ```
+
+- 🆕 `POST /student` - Register a new student
 - ✏️ `PUT /student` - Update student information  
 - 🖊️ `PATCH /student/id` - Update a student a specific information
 - ❌ `DELETE /student/id` - Remove a student record  
