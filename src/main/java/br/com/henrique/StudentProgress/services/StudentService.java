@@ -15,6 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,6 +34,9 @@ public class StudentService {
     @Autowired
     private StudentRepository repository;
 
+    @Autowired
+    private PagedResourcesAssembler<StudentDTO> assembler;
+
     public StudentDTO findById(Long id) {
         var dto = Mapper.parseObjects(repository.findById(id).orElseThrow(() -> new IdNotFoundException("Id not found")), StudentDTO.class);
         addHateoasLinks(dto);
@@ -35,11 +44,17 @@ public class StudentService {
         return dto;
     }
 
-    public List<StudentDTO> findAll() {
-        var students = Mapper.parseListObjects(repository.findAll(), StudentDTO.class);
-        students.forEach(this::addHateoasLinks);
+    public PagedModel<EntityModel<StudentDTO>> findAll(Pageable pageable) {
+        var students = repository.findAll(pageable);
 
-        return students;
+        var studentsWithLinks = students.map(student -> {
+           var dto = Mapper.parseObjects(student, StudentDTO.class);
+           addHateoasLinks(dto);
+           return dto;
+        });
+
+        Link findAllLink = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(StudentController.class).findAllStudents(pageable.getPageNumber(), pageable.getPageSize(), String.valueOf(pageable.getSort()))).withSelfRel();
+        return assembler.toModel(studentsWithLinks, findAllLink);
     }
 
     public StudentDTO post(StudentDTO student) {
@@ -137,7 +152,7 @@ public class StudentService {
 
     private void addHateoasLinks(StudentDTO student) {
         student.add(linkTo(methodOn(StudentController.class).findStudentById(student.getId())).withSelfRel().withType("GET"));
-        student.add(linkTo(methodOn(StudentController.class).findAllStudents()).withRel("findAll").withType("GET"));
+        student.add(linkTo(methodOn(StudentController.class).findAllStudents(0, 12, "asc")).withRel("findAll").withType("GET"));
         student.add(linkTo(methodOn(StudentController.class).postStudent(student)).withRel("create").withType("POST"));
         student.add(linkTo(methodOn(StudentController.class).putStudent(student)).withRel("update").withType("PUT"));
         student.add(linkTo(methodOn(StudentController.class).patchStudent(student.getId(), student)).withRel("patch").withType("PATCH"));
@@ -146,7 +161,7 @@ public class StudentService {
 
     private void validateStudentFields(StudentDTO student) {
         if (student.getNotes() == null || student.getNotes().isEmpty() ||
-                student.getBirthDate() == null || student.getBirthDate().isBlank() ||
+                student.getBirthDate() == null ||
                 student.getName() == null || student.getName().isBlank() ||
                 student.getCourse() == null || student.getCourse().isBlank() ||
                 student.getClassSchool() == null || student.getClassSchool().isBlank() ||

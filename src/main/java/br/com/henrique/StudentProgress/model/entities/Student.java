@@ -1,7 +1,9 @@
 package br.com.henrique.StudentProgress.model.entities;
 
+import br.com.henrique.StudentProgress.serialization.converter.NotesConverter;
 import jakarta.persistence.*;
 
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -15,8 +17,8 @@ public class Student {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "birthDate", nullable = false)
-    private String birthDate;
+    @Column(name = "birth_date", nullable = false)
+    private Date birthDate;
 
     @Column(name = "cpf", nullable = true)
     private String cpf;
@@ -33,7 +35,8 @@ public class Student {
     @Column(name = "class", nullable = false)
     private String classSchool;
 
-    @Column(name = "notes", nullable = false)
+    @Column(name = "notes", nullable = false, columnDefinition = "TEXT")
+    @Convert(converter = NotesConverter.class)
     private List<Double> notes;
 
     public Student() {
@@ -55,11 +58,11 @@ public class Student {
         this.name = name;
     }
 
-    public String getBirthDate() {
+    public Date getBirthDate() {
         return birthDate;
     }
 
-    public void setBirthDate(String birthDate) {
+    public void setBirthDate(Date birthDate) {
         this.birthDate = birthDate;
     }
 

@@ -1,14 +1,17 @@
 package br.com.henrique.StudentProgress.transfer.DTOs;
 
 import org.springframework.hateoas.RepresentationModel;
+import org.springframework.hateoas.server.core.Relation;
 
+import java.util.Date;
 import java.util.List;
 
+@Relation(collectionRelation = "students")
 public class StudentDTO extends RepresentationModel<StudentDTO> {
 
     private Long id;
     private String name;
-    private String birthDate;
+    private Date birthDate;
     private String cpf;
     private String email;
     private String registration;
@@ -35,11 +38,11 @@ public class StudentDTO extends RepresentationModel<StudentDTO> {
         this.name = name;
     }
 
-    public String getBirthDate() {
+    public Date getBirthDate() {
         return birthDate;
     }
 
-    public void setBirthDate(String birthDate) {
+    public void setBirthDate(Date birthDate) {
         this.birthDate = birthDate;
     }
 
