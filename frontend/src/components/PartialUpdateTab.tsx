@@ -59,9 +59,8 @@ export function PartialUpdateTab({
             Atualiza somente o preenchido
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            Se um campo estiver vazio, ele é ignorado no PATCH. Para notas,
-            preencha os 3 campos quando quiser atualizar a lista completa. O ID
-            continua obrigatório.
+            Se um campo não for alterado, ele é ignorado na atualização. Para notas,
+            preencha os 3 campos quando quiser atualizar a lista completa.
           </p>
         </article>
 

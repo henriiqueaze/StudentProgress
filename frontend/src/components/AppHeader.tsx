@@ -17,14 +17,16 @@ export function AppHeader({ logoUrl, currentUser, onLogout }: AppHeaderProps) {
             className="h-10 w-10 object-contain"
           />
         </div>
-        <div className="text-center">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-cyan-300">
-            Student Progress
-          </p>
+        <div className="pl-50">
+          <div className="text-center">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.32em] text-cyan-300">
+              Student Progress
+            </p>
 
-          <p className="text-sm text-slate-300">
-            Dashboard acadêmico para gestão de alunos
-          </p>
+            <p className="text-sm text-slate-300 ">
+              Dashboard acadêmico para gestão de alunos
+            </p>
+          </div>
         </div>
 
         {currentUser ? (
