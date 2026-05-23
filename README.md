@@ -1,126 +1,54 @@
-# <p align="center">🎓 StudentProgress API 📊</p>
+# StudentProgress
+
 <p align="center">
-  <img src="assets/images/Logo%20StudentProgress.png" alt="StudentProgress Logo" width="300">
+  <img src="frontend/public/student-progress-logo.png" alt="StudentProgress Logo" width="260">
 </p>
 
-**StudentProgress** is a Spring Boot application for managing and tracking student data, including grades and academic status.  
-It provides an API for registering, updating, and monitoring student records, calculating averages, and offering real-time insights into student performance.  
-This helps educational institutions streamline their processes efficiently.
+**StudentProgress** é uma aplicação completa para gerenciamento e acompanhamento de alunos. O repositório reúne o frontend em React e a API em Spring Boot, com autenticação, cadastro de estudantes, atualização de notas, métricas acadêmicas e documentação da API.
 
----
+## Visão geral
 
-## ✨ Features
-- 📌 Full CRUD operations for student records in the database
-- 🎯 Filter students by academic status
-- 🧮 Automatically calculate grade averages
-- 🔗 HATEOAS support for enhanced API navigation
-- 📄 Pagination and pageable search for student lists
-- 🛠️ Database version control with Flyway
+- Frontend em [frontend](frontend) com React, TypeScript e Vite.
+- Backend em [backend](backend) com Spring Boot, MySQL e Flyway.
+- Logo centralizada em `frontend/public/student-progress-logo.png`.
 
----
+## Como executar
 
-## 🚀 How to Use
+### Backend
 
-1. **Clone the repository:**
-   ```bash
-   git clone git@github.com:henriiqueaze/StudentProgress.git
-   cd StudentProgress
-   ```
+1. Configure as variáveis de ambiente do banco e do CORS.
+2. Crie o banco `student_progress` no MySQL.
+3. Entre na pasta `backend` e rode:
 
-2. **Create the MySQL database:**
-   Before running the application, make sure you have a MySQL server running locally or accessible remotely, 
-   and create the database used by the app:
-   ```bash
-   CREATE DATABASE student_progress;
-   ```
-
-3. **Set up environment variables:**
-   Copy the example file and customize it:
-   ```bash
-   cp .env.example .env
-   ```
-   Make sure the SPRING_DATASOURCE_URL points to your MySQL server host and port, for example:
-   ```bash
-   jdbc:mysql://localhost:3306/student_progress?useSSL=false
-   ```
-
-4. **Build the application (.jar) with Maven:**
-   This step compiles the code and generates the .jar file inside the target/ folder:
-   ```bash
-   ./mvnw clean package
-   ```
-
-5. **Run the application using Docker Compose:**
-   ```bash
-   docker-compose up --build
-   ```
-
-6. **Access the API documentation (Swagger):**
-   ```bash
-   http://localhost:8080/swagger-ui.html
-   ```
-
----
-
-## 🔗 API Endpoints
-- 📄 `GET /student/{id}` - Retrieve a specific student details
-- 📥 `GET /student` - Retrieve all student details. Optional query parameters for pagination:
-  - page: page number (default: 0)
-  - size: number of records per page (default: 12)
-  - direction: sorting direction, asc or desc (default: asc)
-    - Example:
-
-   ```bash
-   GET /student?page=0&size=10&direction=desc
-   ```
-
-- 🆕 `POST /student` - Register a new student
-- ✏️ `PUT /student` - Update student information  
-- 🖊️ `PATCH /student/id` - Update a student a specific information
-- ❌ `DELETE /student/id` - Remove a student record  
-- 📊 `GET /student/average/id` - Get the grade point average of a specific student
-- 🧮 `GET /student/filter/{status}` — Filter students by academic status
-
----
-
-## 🌐 CORS Configuration
-
-This API supports **CORS (Cross-Origin Resource Sharing)** to enable integration with front-end applications hosted on different domains.
-
-CORS is configured globally in the backend using the following setup:
-- Allowed Origins: Defined via CORS_ALLOWED_ORIGINS
-- Allowed Methods: All (GET, POST, PUT, PATCH, DELETE, etc.)
-- Credentials: Enabled (allowCredentials=true) — supports cookies and authorization headers
-
-In your .env file, define:
 ```bash
-CORS_ALLOWED_ORIGINS=http://localhost:8080
-   ```
+./mvnw clean package
+./mvnw spring-boot:run
+```
 
-To allow multiple domains, separate them with commas:
+### Frontend
+
+1. Entre na pasta `frontend`.
+2. Instale as dependências e inicie a interface:
+
 ```bash
-CORS_ALLOWED_ORIGINS=http://localhost:8080,https://your-frontend.com
-   ```
+npm install
+npm run dev
+```
 
----
+## Variáveis principais
 
-## 🛠️ Technologies Used
-- ☕ Java (Spring Boot)  
-- 🗄️ MySQL (Database)  
-- 🏗️ Hibernate (ORM)  
-- 🔗 HATEOAS (Hypermedia API support)  
-- 🧪 JUnit (Testing framework) 
-- 📂 Flyway (Database migrations)  
-- 🐳 Docker & Docker Compose  
-- 📑 Swagger (API documentation)  
+- Backend: `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `CORS_ALLOWED_ORIGINS`.
+- Frontend: `VITE_API_BASE_URL`.
 
----
+## Documentação útil
 
-## 📜 License
-This project is licensed under the MIT License.  
-Feel free to use and modify it according to your needs.
+- [README do frontend](frontend/README.md)
+- [README do backend](backend/README.md)
 
----
+## Estrutura do projeto
 
-For contributions or support, please contact me via email at [henriqueeaze.dev@gmail.com](mailto:henriqueeaze.dev@gmail.com)  
-or connect with me on [LinkedIn](https://www.linkedin.com/in/henrique-azevedo-b2195b2b0/).
+```text
+StudentProgress/
+├── backend/
+└── frontend/
+```

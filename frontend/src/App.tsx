@@ -1,0 +1,983 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+
+import {
+  AlertBanner,
+  AuthPanel,
+  AnalyticsTab,
+  AppHeader,
+  PartialUpdateTab,
+  RegisterTab,
+  StudentsTab,
+  TabNavigation,
+} from "./components";
+import type {
+  Alert,
+  AuthForm,
+  AuthMode,
+  AuthResponse,
+  AuthUser,
+  ApiErrorBody,
+  PagedStudentsResponse,
+  Student,
+  StudentAverage,
+  StudentForm,
+  StudentStatus,
+  TabKey,
+} from "./types";
+import {
+  collectNotes,
+  splitNotes,
+  toInputDate,
+  toIsoDate,
+} from "./utils/studentFormatters";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+const LOGO_URL = "/student-progress-logo.png";
+const AUTH_TOKEN_KEY = "studentprogress.auth.token";
+const AUTH_USER_KEY = "studentprogress.auth.user";
+const PAGE_SIZE = 12;
+type StudentStatusFilter = StudentStatus | "ALL";
+const TABS: Array<{ key: TabKey; label: string }> = [
+  { key: "register", label: "Cadastro" },
+  { key: "partial", label: "Atualização parcial" },
+  { key: "analytics", label: "Médias" },
+  { key: "students", label: "Lista" },
+];
+
+const emptyStudentForm: StudentForm = {
+  id: "",
+  name: "",
+  birthDate: "",
+  cpf: "",
+  email: "",
+  registration: "",
+  course: "",
+  classSchool: "",
+  note1: "",
+  note2: "",
+  note3: "",
+};
+
+const emptyAuthForm: AuthForm = {
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
+
+class ApiError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+function readStoredAuthUser(): AuthUser | null {
+  const storedUser = localStorage.getItem(AUTH_USER_KEY);
+
+  if (!storedUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedUser) as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+function clearStoredAuthSession() {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+}
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(storedToken ? { Authorization: `Bearer ${storedToken}` } : {}),
+      ...(options?.body ? { "Content-Type": "application/json" } : {}),
+      ...options?.headers,
+    },
+  });
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  if ((response.status === 401 || response.status === 403) && storedToken) {
+    clearStoredAuthSession();
+    window.dispatchEvent(new Event("studentprogress:unauthorized"));
+  }
+
+  const raw = await response.text();
+  let parsed: ApiErrorBody | T | undefined;
+
+  if (raw) {
+    try {
+      parsed = JSON.parse(raw) as ApiErrorBody | T;
+    } catch {
+      parsed = undefined;
+    }
+  }
+
+  if (!response.ok) {
+    const errorBody = parsed as ApiErrorBody | undefined;
+    const status =
+      typeof errorBody?.status === "number"
+        ? errorBody.status
+        : response.status;
+
+    throw new ApiError(
+      errorBody?.message ||
+        errorBody?.error ||
+        (response.status === 403
+          ? "Acesso negado. Faça login novamente."
+          : undefined) ||
+        "Erro na comunicacao com a API.",
+      status,
+    );
+  }
+
+  return parsed as T;
+}
+
+function App() {
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      const stored = localStorage.getItem("studentprogress.theme");
+      if (stored) return stored === "dark";
+    } catch {
+      /* ignore */
+    }
+
+    return (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)")?.matches
+    );
+  });
+
+  useEffect(() => {
+    try {
+      if (isDark) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
+      localStorage.setItem("studentprogress.theme", isDark ? "dark" : "light");
+    } catch {
+      /* ignore */
+    }
+  }, [isDark]);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [authForm, setAuthForm] = useState<AuthForm>(emptyAuthForm);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authToken, setAuthToken] = useState(
+    () => localStorage.getItem(AUTH_TOKEN_KEY) ?? "",
+  );
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() =>
+    readStoredAuthUser(),
+  );
+  const [students, setStudents] = useState<Student[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [allStudentsLoading, setAllStudentsLoading] = useState(false);
+  const [studentForm, setStudentForm] = useState<StudentForm>(emptyStudentForm);
+  const [patchForm, setPatchForm] = useState<StudentForm>(emptyStudentForm);
+  const [partialStudentSearch, setPartialStudentSearch] = useState("");
+  const [searchNameQuery, setSearchNameQuery] = useState("");
+  const [averageResult, setAverageResult] = useState<StudentAverage | null>(
+    null,
+  );
+  const [averageStudentSearch, setAverageStudentSearch] = useState("");
+  const [averageSelectedStudentId, setAverageSelectedStudentId] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StudentStatusFilter>("ALL");
+  const [alert, setAlert] = useState<Alert | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
+  const [direction, setDirection] = useState<"asc" | "desc">("asc");
+  const [activeTab, setActiveTab] = useState<TabKey>("register");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [studentPendingDelete, setStudentPendingDelete] =
+    useState<Student | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  function syncStudentCollections(updatedStudent: Student) {
+    setStudents((previous) =>
+      previous.map((student) =>
+        student.id === updatedStudent.id ? updatedStudent : student,
+      ),
+    );
+
+    setAllStudents((previous) =>
+      previous.map((student) =>
+        student.id === updatedStudent.id ? updatedStudent : student,
+      ),
+    );
+  }
+
+  function removeStudentFromCollections(studentId: number) {
+    setStudents((previous) =>
+      previous.filter((student) => student.id !== studentId),
+    );
+
+    setAllStudents((previous) =>
+      previous.filter((student) => student.id !== studentId),
+    );
+  }
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setAlert({
+        type: "error",
+        message: "Sessão expirada. Faça login novamente.",
+      });
+      handleLogout();
+    };
+
+    window.addEventListener("studentprogress:unauthorized", handleUnauthorized);
+
+    return () => {
+      window.removeEventListener(
+        "studentprogress:unauthorized",
+        handleUnauthorized,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!alert) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setAlert(null);
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [alert]);
+
+  useEffect(() => {
+    if (partialStudentSearch.trim() === "") {
+      setPatchForm(emptyStudentForm);
+    }
+  }, [partialStudentSearch]);
+
+  const canGoBack = currentPage > 0;
+  const canGoNext = currentPage < totalPages - 1;
+
+  const paginationLabel = useMemo(() => {
+    const firstItem = totalElements === 0 ? 0 : currentPage * PAGE_SIZE + 1;
+    const lastItem = Math.min((currentPage + 1) * PAGE_SIZE, totalElements);
+    return `${firstItem}-${lastItem} de ${totalElements}`;
+  }, [currentPage, totalElements]);
+
+  const pageBackgroundClass = isDark
+    ? "bg-[radial-gradient(circle_at_8%_0%,rgba(2,6,23,0.7),transparent_30%),radial-gradient(circle_at_92%_12%,rgba(3,7,18,0.6),transparent_35%),linear-gradient(180deg,#03060a_0%,#04101a_40%,#04121a_100%)] text-slate-100"
+    : "bg-[radial-gradient(circle_at_top_left,rgba(9,86,126,0.2),transparent_30%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.16),transparent_28%),linear-gradient(180deg,#f1f7fb_0%,#eff7fa_42%,#e8f1f6_100%)] text-slate-900";
+
+  const fetchStudentsPage = useCallback(
+    async (page = 0, sortDirection = direction) => {
+      return request<PagedStudentsResponse>(
+        `/student?page=${page}&size=${PAGE_SIZE}&direction=${sortDirection}`,
+      );
+    },
+    [direction],
+  );
+
+  const loadStudents = useCallback(
+    async (page = 0, sortDirection = direction) => {
+      setListLoading(true);
+
+      try {
+        const response = await fetchStudentsPage(page, sortDirection);
+
+        setStudents(response._embedded?.students ?? []);
+        setCurrentPage(response.page?.number ?? page);
+        setTotalPages(response.page?.totalPages ?? 1);
+        setTotalElements(response.page?.totalElements ?? 0);
+      } catch (error) {
+        setAlert({
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao carregar alunos.",
+        });
+      } finally {
+        setListLoading(false);
+      }
+    },
+    [direction, fetchStudentsPage],
+  );
+
+  useEffect(() => {
+    const initializeStudents = async () => {
+      if (!authToken) {
+        return;
+      }
+
+      setListLoading(true);
+
+      try {
+        const response = await fetchStudentsPage(0);
+
+        setStudents(response._embedded?.students ?? []);
+        setCurrentPage(response.page?.number ?? 0);
+        setTotalPages(response.page?.totalPages ?? 1);
+        setTotalElements(response.page?.totalElements ?? 0);
+      } catch (error) {
+        setAlert({
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao carregar alunos.",
+        });
+      } finally {
+        setListLoading(false);
+      }
+    };
+
+    void initializeStudents();
+  }, [authToken, fetchStudentsPage]);
+
+  function updateMainForm<K extends keyof StudentForm>(
+    field: K,
+    value: StudentForm[K],
+  ) {
+    setStudentForm((previous) => ({ ...previous, [field]: value }));
+  }
+
+  function updatePatchForm<K extends keyof StudentForm>(
+    field: K,
+    value: StudentForm[K],
+  ) {
+    setPatchForm((previous) => ({ ...previous, [field]: value }));
+  }
+
+  function updateAuthForm<K extends keyof AuthForm>(
+    field: K,
+    value: AuthForm[K],
+  ) {
+    setAuthForm((previous) => ({ ...previous, [field]: value }));
+  }
+
+  function saveAuthSession(response: AuthResponse) {
+    localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user));
+    setAuthToken(response.token);
+    setCurrentUser(response.user);
+  }
+
+  function handleLogout() {
+    clearStoredAuthSession();
+    setAuthToken("");
+    setCurrentUser(null);
+    setAuthMode("login");
+    setAuthForm(emptyAuthForm);
+    setStudents([]);
+    setAllStudents([]);
+    setStudentForm(emptyStudentForm);
+    setPatchForm(emptyStudentForm);
+    setPartialStudentSearch("");
+    setSearchNameQuery("");
+    setAverageStudentSearch("");
+    setAverageSelectedStudentId("");
+    setAverageResult(null);
+    setActiveTab("register");
+    setEditingId(null);
+  }
+
+  async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAuthLoading(true);
+
+    try {
+      if (
+        authMode === "register" &&
+        authForm.password !== authForm.confirmPassword
+      ) {
+        throw new Error("As senhas precisam ser iguais.");
+      }
+
+      const endpoint =
+        authMode === "register" ? "/auth/register" : "/auth/login";
+      const payload =
+        authMode === "register"
+          ? {
+              name: authForm.name.trim(),
+              email: authForm.email.trim(),
+              password: authForm.password,
+            }
+          : {
+              email: authForm.email.trim(),
+              password: authForm.password,
+            };
+
+      const response = await request<AuthResponse>(endpoint, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      saveAuthSession(response);
+      setAuthForm(emptyAuthForm);
+      setAuthMode("login");
+      setAlert({
+        type: "success",
+        message:
+          authMode === "register"
+            ? "Conta criada e acesso liberado."
+            : "Login realizado com sucesso.",
+      });
+    } catch (error) {
+      setAlert({
+        type: "error",
+        message:
+          error instanceof Error ? error.message : "Falha na autenticação.",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  function buildStudentPayload(form: StudentForm) {
+    const notes = collectNotes([form.note1, form.note2, form.note3]);
+
+    if (
+      !form.name.trim() ||
+      !form.birthDate ||
+      !form.registration.trim() ||
+      !form.course.trim() ||
+      !form.classSchool.trim() ||
+      notes.length !== 3
+    ) {
+      throw new Error(
+        "Preencha nome, data de nascimento, matrícula, curso, turma e as 3 notas.",
+      );
+    }
+
+    return {
+      id: editingId ?? undefined,
+      name: form.name.trim(),
+      birthDate: toIsoDate(form.birthDate),
+      cpf: form.cpf.trim() || undefined,
+      email: form.email.trim() || undefined,
+      registration: form.registration.trim(),
+      course: form.course.trim(),
+      classSchool: form.classSchool.trim(),
+      notes,
+    };
+  }
+
+  function buildPatchPayload(form: StudentForm) {
+    const payload: Partial<Student> = {};
+
+    if (form.name.trim()) payload.name = form.name.trim();
+    if (form.birthDate) payload.birthDate = toIsoDate(form.birthDate);
+    if (form.cpf.trim()) payload.cpf = form.cpf.trim();
+    if (form.email.trim()) payload.email = form.email.trim();
+    if (form.registration.trim()) payload.registration = form.registration.trim();
+    if (form.course.trim()) payload.course = form.course.trim();
+    if (form.classSchool.trim()) payload.classSchool = form.classSchool.trim();
+
+    const hasAnyNoteInput = [form.note1, form.note2, form.note3].some(
+      (note) => note.trim() !== "",
+    );
+    const notes = collectNotes([form.note1, form.note2, form.note3]);
+
+    if (hasAnyNoteInput && notes.length !== 3) {
+      throw new Error("Para atualizar notas, preencha as 3 notas.");
+    }
+
+    if (notes.length === 3) {
+      payload.notes = notes;
+    }
+
+    return payload;
+  }
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      const payload = buildStudentPayload(studentForm);
+      const updatedStudent = editingId
+        ? await request<Student>("/student", {
+            method: "PUT",
+            body: JSON.stringify(payload),
+          })
+        : await request<Student>("/student", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+
+      if (editingId) {
+        setAlert({ type: "success", message: "Aluno atualizado com sucesso." });
+      } else {
+        setAlert({ type: "success", message: "Aluno criado com sucesso." });
+      }
+
+      syncStudentCollections(updatedStudent);
+
+      setStudentForm(emptyStudentForm);
+      setEditingId(null);
+      await loadStudents(currentPage);
+      setActiveTab("students");
+    } catch (error) {
+      setAlert({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Nao foi possivel salvar o aluno.",
+      });
+    }
+  }
+
+  async function handlePatch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      const studentId = Number(patchForm.id);
+      if (!Number.isFinite(studentId) || studentId <= 0) {
+        throw new Error("Selecione um aluno para atualizar.");
+      }
+
+      const payload = buildPatchPayload(patchForm);
+      if (Object.keys(payload).length === 0) {
+        throw new Error("Preencha ao menos um campo para atualizar.");
+      }
+
+      const updatedStudent = await request<Student>(`/student/${studentId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+
+      setAlert({ type: "success", message: "Aluno atualizado com sucesso." });
+      syncStudentCollections(updatedStudent);
+      setPatchForm(emptyStudentForm);
+      setPartialStudentSearch("");
+      await loadStudents(currentPage);
+      setActiveTab("students");
+    } catch (error) {
+      setAlert({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Nao foi possivel atualizar via PATCH.",
+      });
+    }
+  }
+
+  function handleDelete(student: Student) {
+    if (!student.id) {
+      return;
+    }
+
+    setStudentPendingDelete(student);
+  }
+
+  async function confirmDeleteStudent() {
+    if (!studentPendingDelete?.id) {
+      return;
+    }
+
+    setDeleteLoading(true);
+
+    try {
+      await request<void>(`/student/${studentPendingDelete.id}`, {
+        method: "DELETE",
+      });
+      setAlert({
+        type: "success",
+        message: `Aluno ${studentPendingDelete.name} removido.`,
+      });
+      removeStudentFromCollections(studentPendingDelete.id);
+      setStudentPendingDelete(null);
+
+      const targetPage =
+        students.length === 1 && currentPage > 0
+          ? currentPage - 1
+          : currentPage;
+      await loadStudents(targetPage);
+    } catch (error) {
+      setAlert({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Nao foi possivel remover o aluno.",
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  async function handleAverageBySelectedStudent(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    const numericId = Number(averageSelectedStudentId);
+    if (
+      !averageSelectedStudentId.trim() ||
+      !Number.isFinite(numericId) ||
+      numericId <= 0
+    ) {
+      setAlert({
+        type: "error",
+        message: "Selecione um aluno para calcular a média.",
+      });
+      return;
+    }
+
+    try {
+      const data = await request<StudentAverage>(
+        `/student/average/${numericId}`,
+      );
+      setAverageResult(data);
+      setAverageStudentSearch("");
+      setAverageSelectedStudentId("");
+      setAlert({ type: "success", message: "Média calculada com sucesso." });
+    } catch (error) {
+      setAverageResult(null);
+      setAlert({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Nao foi possivel calcular a media.",
+      });
+    }
+  }
+
+  async function loadAverageFromStudent(student: Student) {
+    if (!student.id) {
+      setAlert({
+        type: "error",
+        message: "Não foi possível identificar o aluno selecionado.",
+      });
+      return;
+    }
+
+    try {
+      const data = await request<StudentAverage>(
+        `/student/average/${student.id}`,
+      );
+      setAverageStudentSearch(student.name);
+      setAverageSelectedStudentId(String(student.id));
+      setAverageResult(data);
+      setAverageStudentSearch("");
+      setAverageSelectedStudentId("");
+      setAlert({ type: "success", message: "Média calculada com sucesso." });
+      setActiveTab("analytics");
+    } catch (error) {
+      setAverageResult(null);
+      setAlert({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Nao foi possivel calcular a media.",
+      });
+    }
+  }
+
+  function loadStudentIntoPatch(student: Student) {
+    const [note1, note2, note3] = splitNotes(student.notes);
+
+    setPatchForm({
+      id: String(student.id ?? ""),
+      name: student.name,
+      birthDate: toInputDate(student.birthDate),
+      cpf: student.cpf ?? "",
+      email: student.email ?? "",
+      registration: student.registration,
+      course: student.course,
+      classSchool: student.classSchool,
+      note1,
+      note2,
+      note3,
+    });
+    setPartialStudentSearch(student.name);
+    setActiveTab("partial");
+  }
+
+  function handleAverageStudentSearchChange(value: string) {
+    setAverageStudentSearch(value);
+    setAverageSelectedStudentId("");
+  }
+
+  function handleAverageStudentSelect(student: Student) {
+    if (!student.id) {
+      return;
+    }
+
+    setAverageStudentSearch(student.name);
+    setAverageSelectedStudentId(String(student.id));
+  }
+
+  const fetchAllStudents = useCallback(async (): Promise<Student[]> => {
+    const overview = await request<PagedStudentsResponse>(
+      "/student?page=0&size=1&direction=asc",
+    );
+    const total = overview.page?.totalElements ?? 0;
+
+    if (total === 0) {
+      return [];
+    }
+
+    const response = await request<PagedStudentsResponse>(
+      `/student?page=0&size=${Math.max(total, PAGE_SIZE)}&direction=asc`,
+    );
+    return response._embedded?.students ?? [];
+  }, []);
+
+  useEffect(() => {
+    const initializeAllStudents = async () => {
+      if (
+        !authToken ||
+        !["partial", "analytics", "students"].includes(activeTab) ||
+        allStudents.length > 0 ||
+        allStudentsLoading
+      ) {
+        return;
+      }
+
+      setAllStudentsLoading(true);
+
+      try {
+        const response = await fetchAllStudents();
+        setAllStudents(response);
+      } catch (error) {
+        setAlert({
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Falha ao carregar a lista completa de alunos.",
+        });
+      } finally {
+        setAllStudentsLoading(false);
+      }
+    };
+
+    void initializeAllStudents();
+  }, [
+    activeTab,
+    allStudents.length,
+    allStudentsLoading,
+    authToken,
+    fetchAllStudents,
+  ]);
+
+  if (!authToken) {
+    return (
+      <main className={`min-h-screen ${pageBackgroundClass}`}>
+        <div className="mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 py-6 sm:px-6 lg:px-8">
+          {alert ? <AlertBanner alert={alert} onDismiss={() => setAlert(null)} /> : null}
+          <AuthPanel
+            mode={authMode}
+            form={authForm}
+            loading={authLoading}
+            onModeChange={setAuthMode}
+            onChange={updateAuthForm}
+            onSubmit={handleAuthSubmit}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsDark((p) => !p)}
+          aria-label="Alternar tema"
+          className="fixed right-6 bottom-6 z-50 rounded-full p-3 bg-white/90 text-slate-900 shadow-lg border dark:bg-slate-800 dark:text-white dark:border-slate-700"
+        >
+          {isDark ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0b1220" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="4" stroke="#0b1220" fill="#0b1220" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#0b1220" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+            </svg>
+          )}
+        </button>
+      </main>
+    );
+  }
+
+  return (
+    <main className={`min-h-screen ${pageBackgroundClass}`}>
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
+        <AppHeader
+          logoUrl={LOGO_URL}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+        />
+
+        <TabNavigation
+          tabs={TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
+
+        {alert ? <AlertBanner alert={alert} onDismiss={() => setAlert(null)} /> : null}
+
+        {activeTab === "register" ? (
+          <RegisterTab
+            editingId={editingId}
+            studentForm={studentForm}
+            onCancelEdit={() => {
+              setEditingId(null);
+              setStudentForm(emptyStudentForm);
+            }}
+            onSubmit={handleCreate}
+            onChange={updateMainForm}
+          />
+        ) : null}
+
+        {activeTab === "partial" ? (
+          <PartialUpdateTab
+            patchForm={patchForm}
+            students={allStudents}
+            studentsLoading={allStudentsLoading}
+            studentSearch={partialStudentSearch}
+            onSubmit={handlePatch}
+            onChange={updatePatchForm}
+            onStudentSearchChange={setPartialStudentSearch}
+            onStudentSelect={loadStudentIntoPatch}
+          />
+        ) : null}
+
+        {activeTab === "analytics" ? (
+          <AnalyticsTab
+            averageStudentSearch={averageStudentSearch}
+            averageSelectedStudentId={averageSelectedStudentId}
+            averageResult={averageResult}
+            students={allStudents}
+            studentsLoading={allStudentsLoading}
+            onAverageStudentSearchChange={handleAverageStudentSearchChange}
+            onAverageStudentSelect={handleAverageStudentSelect}
+            onAverageSubmit={handleAverageBySelectedStudent}
+          />
+        ) : null}
+
+        {activeTab === "students" ? (
+          <StudentsTab
+            students={students}
+            listLoading={listLoading}
+            direction={direction}
+            paginationLabel={paginationLabel}
+            canGoBack={canGoBack}
+            canGoNext={canGoNext}
+            searchNameQuery={searchNameQuery}
+            statusFilter={statusFilter}
+            onDirectionChange={setDirection}
+            onRefresh={() => {
+              void loadStudents(currentPage);
+            }}
+            onPrevious={() => {
+              void loadStudents(currentPage - 1);
+            }}
+            onNext={() => {
+              void loadStudents(currentPage + 1);
+            }}
+            onNameQueryChange={setSearchNameQuery}
+            onStatusFilterChange={setStatusFilter}
+            onEdit={loadStudentIntoPatch}
+            onAverage={loadAverageFromStudent}
+            onDelete={(student) => {
+              handleDelete(student);
+            }}
+          />
+        ) : null}
+      </div>
+
+      {studentPendingDelete ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4"
+          role="presentation"
+          onClick={() => {
+            if (!deleteLoading) {
+              setStudentPendingDelete(null);
+            }
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-student-title"
+            aria-describedby="delete-student-description"
+            className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-rose-600 dark:text-rose-300">
+              Confirmação
+            </p>
+            <h3
+              id="delete-student-title"
+              className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-100"
+            >
+              Excluir aluno permanentemente?
+            </h3>
+            <p
+              id="delete-student-description"
+              className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300"
+            >
+              Você está prestes a excluir <strong>{studentPendingDelete.name}</strong>.
+              Essa ação não pode ser desfeita.
+            </p>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setStudentPendingDelete(null)}
+                disabled={deleteLoading}
+                className="rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void confirmDeleteStudent();
+                }}
+                disabled={deleteLoading}
+                className="rounded-full border border-rose-300 bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60 dark:border-rose-600"
+              >
+                {deleteLoading ? "Excluindo..." : "Sim, excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setIsDark((p) => !p)}
+        aria-label="Alternar tema"
+        className="fixed right-6 bottom-6 z-50 rounded-full p-3 bg-white/90 text-slate-900 shadow-lg border dark:bg-slate-800 dark:text-white dark:border-slate-700"
+      >
+        {isDark ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0b1220" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="12" cy="12" r="4" stroke="#0b1220" fill="#0b1220" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#0b1220" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+        )}
+      </button>
+    </main>
+  );
+}
+
+export default App;
