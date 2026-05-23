@@ -52,9 +52,9 @@ export function AuthPanel({
               Cadastro e acesso ao sistema em um único painel
             </h1>
             <p className="max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-              Crie sua conta ou acesse sua área de forma simples e prática. Após
-              entrar no sistema, todas as funcionalidades ficam disponíveis em
-              um painel organizado e seguro.
+              Crie sua conta ou acesse sua área de forma simples e prática.
+              Após entrar no sistema, todas as funcionalidades ficam disponíveis
+              em um painel organizado e seguro.
             </p>
           </div>
 
@@ -69,15 +69,15 @@ export function AuthPanel({
         </div>
       </article>
 
-      <article className="flex h-[39.5rem] min-h-[39.5rem] flex-col rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex rounded-full bg-slate-100 p-1">
+      <article className="flex h-[39.5rem] min-h-[39.5rem] flex-col rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex rounded-full bg-slate-100 p-1 dark:bg-slate-800">
           <button
             type="button"
             onClick={() => onModeChange("login")}
             className={`flex-1 rounded-full px-4 py-3 text-sm font-semibold transition ${
               !isRegister
                 ? "bg-slate-950 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
             }`}
           >
             Entrar
@@ -88,7 +88,7 @@ export function AuthPanel({
             className={`flex-1 rounded-full px-4 py-3 text-sm font-semibold transition ${
               isRegister
                 ? "bg-slate-950 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
+                : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
             }`}
           >
             Criar conta
@@ -96,13 +96,13 @@ export function AuthPanel({
         </div>
 
         <div key={mode} className="animate-fade-in-up mt-6 space-y-2">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
             {isRegister ? "Novo usuário" : "Acesso"}
           </p>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
             {isRegister ? "Criar conta" : "Entrar no sistema"}
           </h2>
-          <p className="text-sm leading-6 text-slate-600">
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
             {isRegister
               ? "Use seu nome, e-mail e senha para liberar o acesso ao painel."
               : "Entre com seu e-mail e senha para carregar o sistema."}
@@ -122,7 +122,7 @@ export function AuthPanel({
             }`}
           >
             {isRegister ? (
-              <label className="block space-y-2 text-sm font-medium text-slate-600">
+              <label className="block space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
                 <span>Nome</span>
                 <input
                   type="text"
@@ -130,12 +130,12 @@ export function AuthPanel({
                   onChange={(event) => onChange("name", event.target.value)}
                   placeholder="Seu nome"
                   required
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-800"
                 />
               </label>
             ) : null}
 
-            <label className="block space-y-2 text-sm font-medium text-slate-600">
+            <label className="block space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
               <span>E-mail</span>
               <input
                 type="email"
@@ -143,11 +143,11 @@ export function AuthPanel({
                 onChange={(event) => onChange("email", event.target.value)}
                 placeholder="voce@exemplo.com"
                 required
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-800"
               />
             </label>
 
-            <label className="block space-y-2 text-sm font-medium text-slate-600">
+            <label className="block space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
               <span>Senha</span>
               <input
                 type="password"
@@ -155,11 +155,12 @@ export function AuthPanel({
                 onChange={(event) => onChange("password", event.target.value)}
                 placeholder="Sua senha"
                 required
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-800"
               />
             </label>
+
             {isRegister ? (
-              <label className="block space-y-2 text-sm font-medium text-slate-600">
+              <label className="block space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
                 <span>Confirmar senha</span>
                 <input
                   type="password"
@@ -169,7 +170,7 @@ export function AuthPanel({
                   }
                   placeholder="Repita sua senha"
                   required
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-4 focus:ring-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-800"
                 />
               </label>
             ) : null}
@@ -178,7 +179,7 @@ export function AuthPanel({
           <button
             type="submit"
             disabled={loading}
-            className={`w-full rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`w-full rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-600 dark:text-slate-950 dark:hover:bg-cyan-500 ${
               isRegister ? "mt-0" : "mx-auto mt-0 max-w-md"
             }`}
           >

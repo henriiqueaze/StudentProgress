@@ -67,6 +67,39 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  /* Dark theme overrides (class-based) */
+  html.dark {
+    @apply bg-slate-900 text-slate-100;
+  }
+
+  html.dark body {
+    @apply bg-slate-900 text-slate-100;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(2,6,23,0.85), transparent 30%),
+      radial-gradient(circle at 92% 12%, rgba(3,7,18,0.75), transparent 30%),
+      linear-gradient(180deg, #00060b 0%, #00121a 45%, #001623 100%);
+  }
+
+  html.dark,
+  html.dark body,
+  html.dark #root {
+    background-color: #020617;
+  }
+
+  /* Utility overrides for common Tailwind classes in dark mode */
+  .dark .bg-white { background-color: #0b1220 !important; }
+  .dark .bg-slate-50 { background-color: #07121d !important; }
+  .dark .bg-slate-100 { background-color: #0b1520 !important; }
+  .dark .text-slate-900 { color: #e6eef8 !important; }
+  .dark .text-slate-950 { color: #ffffff !important; }
+  .dark .text-slate-600 { color: #9fb1c3 !important; }
+  .dark .text-slate-500 { color: #94a6b8 !important; }
+  .dark .border-slate-200 { border-color: #314451 !important; }
+  .dark .border-slate-100 { border-color: #1f2a36 !important; }
+  .dark .bg-cyan-50 { background-color: #042b2f !important; }
+  .dark .bg-rose-50 { background-color: #33161a !important; }
+  .dark .text-emerald-800 { color: #65a68b !important; }
+
   #root {
     @apply min-h-screen;
   }
@@ -75,5 +108,47 @@
   h2,
   h3 {
     font-family: var(--font-display);
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  html.dark .search-toggle-button {
+    border-color: #64748b !important;
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+  }
+
+  html.dark .search-toggle-button:hover {
+    background-color: #475569 !important;
+  }
+
+  html.dark .list-primary-button {
+    border-color: #22d3ee !important;
+    background-color: #22d3ee !important;
+    color: #082f49 !important;
+  }
+
+  html.dark .list-primary-button:hover {
+    background-color: #67e8f9 !important;
+  }
+
+  html.dark .list-nav-button,
+  html.dark .list-edit-button {
+    border-color: #64748b !important;
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+  }
+
+  html.dark .list-nav-button:hover,
+  html.dark .list-edit-button:hover {
+    background-color: #475569 !important;
   }
 }

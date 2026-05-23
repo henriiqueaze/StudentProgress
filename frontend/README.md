@@ -1,75 +1,68 @@
-# React + TypeScript + Vite
+# StudentProgress Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<p align="center">
+  <img src="public/student-progress-logo.png" alt="StudentProgress Logo" width="260">
+</p>
 
-Currently, two official plugins are available:
+Interface web do projeto **StudentProgress**, construída com React, TypeScript, Vite e Tailwind. O app concentra autenticação, cadastro de alunos, atualização parcial de notas, listagem e métricas acadêmicas em uma experiência única.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Funcionalidades
 
-## React Compiler
+- Autenticação com login e cadastro de usuários.
+- Cadastro completo de alunos.
+- Atualização parcial de dados e notas.
+- Listagem paginada com filtros.
+- Cálculo de médias e indicadores acadêmicos.
+- Tratamento de sessões com token e logout em caso de acesso inválido.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Tecnologias
 
-Note: This will impact Vite dev & build performances.
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- Ant Design
 
-## Expanding the ESLint configuration
+## Pré-requisitos
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js 20 ou superior.
+- Backend do StudentProgress disponível localmente ou em ambiente remoto.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Configuração
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Se precisar apontar o front para uma API diferente da padrão, crie um arquivo `.env` na raiz do frontend:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+VITE_API_BASE_URL=http://localhost:8080
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Na pasta `frontend`:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
+npm run build
+npm run lint
+npm run preview
 ```
+
+## Como executar
+
+1. Instale as dependências.
+2. Inicie o backend.
+3. Execute `npm run dev`.
+4. Acesse a aplicação no endereço exibido pelo Vite.
+
+## Estrutura principal
+
+- `src/App.tsx`: composição principal da aplicação.
+- `src/components/`: componentes de interface.
+- `src/utils/`: helpers de formatação e transformação.
+- `public/student-progress-logo.png`: logo usada no projeto.
+
+## Observações
+
+- O build é feito com TypeScript e Vite.
+- O frontend consome a API do backend via `VITE_API_BASE_URL`.

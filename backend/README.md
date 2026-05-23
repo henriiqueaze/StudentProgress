@@ -1,126 +1,110 @@
-# <p align="center">🎓 StudentProgress API 📊</p>
+# StudentProgress API
+
 <p align="center">
-  <img src="assets/images/Logo%20StudentProgress.png" alt="StudentProgress Logo" width="300">
+  <img src="../frontend/public/student-progress-logo.png" alt="StudentProgress Logo" width="260">
 </p>
 
-**StudentProgress** is a Spring Boot application for managing and tracking student data, including grades and academic status.  
-It provides an API for registering, updating, and monitoring student records, calculating averages, and offering real-time insights into student performance.  
-This helps educational institutions streamline their processes efficiently.
+API REST do projeto **StudentProgress**, desenvolvida com Spring Boot para cadastro, consulta, atualização e acompanhamento de estudantes. A aplicação também oferece autenticação, cálculo de médias, filtros por status e documentação interativa.
 
----
+## Funcionalidades
 
-## ✨ Features
-- 📌 Full CRUD operations for student records in the database
-- 🎯 Filter students by academic status
-- 🧮 Automatically calculate grade averages
-- 🔗 HATEOAS support for enhanced API navigation
-- 📄 Pagination and pageable search for student lists
-- 🛠️ Database version control with Flyway
+- Cadastro, consulta, atualização e remoção de alunos.
+- Atualização parcial de informações.
+- Cálculo automático de média por aluno.
+- Filtro por status acadêmico.
+- Paginação e ordenação nos listamentos.
+- Autenticação com JWT.
+- Migrações de banco com Flyway.
+- Documentação Swagger/OpenAPI.
 
----
+## Tecnologias
 
-## 🚀 How to Use
+- Java 17
+- Spring Boot 3
+- Spring Security
+- Spring Data JPA
+- MySQL
+- Flyway
+- HATEOAS
+- Docker e Docker Compose
 
-1. **Clone the repository:**
-   ```bash
-   git clone git@github.com:henriiqueaze/StudentProgress.git
-   cd StudentProgress
-   ```
+## Requisitos
 
-2. **Create the MySQL database:**
-   Before running the application, make sure you have a MySQL server running locally or accessible remotely, 
-   and create the database used by the app:
-   ```bash
-   CREATE DATABASE student_progress;
-   ```
+- Java 17.
+- Maven ou o wrapper `mvnw`.
+- MySQL disponível localmente ou em ambiente remoto.
 
-3. **Set up environment variables:**
-   Copy the example file and customize it:
-   ```bash
-   cp .env.example .env
-   ```
-   Make sure the SPRING_DATASOURCE_URL points to your MySQL server host and port, for example:
-   ```bash
-   jdbc:mysql://localhost:3306/student_progress?useSSL=false
-   ```
+## Variáveis de ambiente
 
-4. **Build the application (.jar) with Maven:**
-   This step compiles the code and generates the .jar file inside the target/ folder:
-   ```bash
-   ./mvnw clean package
-   ```
+O backend lê a configuração principal por variáveis de ambiente:
 
-5. **Run the application using Docker Compose:**
-   ```bash
-   docker-compose up --build
-   ```
+- `SPRING_DATASOURCE_URL`
+- `SPRING_DATASOURCE_USERNAME`
+- `SPRING_DATASOURCE_PASSWORD`
+- `CORS_ALLOWED_ORIGINS`
+- `JWT_SECRET` opcional
+- `JWT_EXPIRATION` opcional
 
-6. **Access the API documentation (Swagger):**
-   ```bash
-   http://localhost:8080/swagger-ui.html
-   ```
+Exemplo:
 
----
-
-## 🔗 API Endpoints
-- 📄 `GET /student/{id}` - Retrieve a specific student details
-- 📥 `GET /student` - Retrieve all student details. Optional query parameters for pagination:
-  - page: page number (default: 0)
-  - size: number of records per page (default: 12)
-  - direction: sorting direction, asc or desc (default: asc)
-    - Example:
-
-   ```bash
-   GET /student?page=0&size=10&direction=desc
-   ```
-
-- 🆕 `POST /student` - Register a new student
-- ✏️ `PUT /student` - Update student information  
-- 🖊️ `PATCH /student/id` - Update a student a specific information
-- ❌ `DELETE /student/id` - Remove a student record  
-- 📊 `GET /student/average/id` - Get the grade point average of a specific student
-- 🧮 `GET /student/filter/{status}` — Filter students by academic status
-
----
-
-## 🌐 CORS Configuration
-
-This API supports **CORS (Cross-Origin Resource Sharing)** to enable integration with front-end applications hosted on different domains.
-
-CORS is configured globally in the backend using the following setup:
-- Allowed Origins: Defined via CORS_ALLOWED_ORIGINS
-- Allowed Methods: All (GET, POST, PUT, PATCH, DELETE, etc.)
-- Credentials: Enabled (allowCredentials=true) — supports cookies and authorization headers
-
-In your .env file, define:
 ```bash
-CORS_ALLOWED_ORIGINS=http://localhost:8080
-   ```
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/student_progress?useSSL=false&serverTimezone=UTC
+SPRING_DATASOURCE_USERNAME=root
+SPRING_DATASOURCE_PASSWORD=senha
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+JWT_SECRET=student-progress-development-secret-key-please-change-32chars
+JWT_EXPIRATION=86400000
+```
 
-To allow multiple domains, separate them with commas:
+## Como executar
+
+### Com Maven
+
 ```bash
-CORS_ALLOWED_ORIGINS=http://localhost:8080,https://your-frontend.com
-   ```
+./mvnw clean package
+./mvnw spring-boot:run
+```
 
----
+### Com Docker Compose
 
-## 🛠️ Technologies Used
-- ☕ Java (Spring Boot)  
-- 🗄️ MySQL (Database)  
-- 🏗️ Hibernate (ORM)  
-- 🔗 HATEOAS (Hypermedia API support)  
-- 🧪 JUnit (Testing framework) 
-- 📂 Flyway (Database migrations)  
-- 🐳 Docker & Docker Compose  
-- 📑 Swagger (API documentation)  
+```bash
+docker-compose up --build
+```
 
----
+## Banco de dados
 
-## 📜 License
-This project is licensed under the MIT License.  
-Feel free to use and modify it according to your needs.
+Antes de subir a aplicação, crie o schema no MySQL:
 
----
+```sql
+CREATE DATABASE student_progress;
+```
 
-For contributions or support, please contact me via email at [henriqueeaze.dev@gmail.com](mailto:henriqueeaze.dev@gmail.com)  
-or connect with me on [LinkedIn](https://www.linkedin.com/in/henrique-azevedo-b2195b2b0/).
+As migrações ficam em `src/main/resources/db/migration` e são aplicadas automaticamente pelo Flyway.
+
+## Documentação
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/v3/api-docs`
+
+## Endpoints principais
+
+- `GET /student/{id}`: busca um aluno por id.
+- `GET /student`: lista alunos com paginação e ordenação.
+- `POST /student`: cadastra um novo aluno.
+- `PUT /student`: atualiza um aluno.
+- `PATCH /student/{id}`: atualiza parcialmente um aluno.
+- `DELETE /student/{id}`: remove um aluno.
+- `GET /student/average/{id}`: retorna a média do aluno.
+- `GET /student/filter/{status}`: filtra alunos por status.
+
+## Estrutura principal
+
+- `src/main/java/.../controllers`: camada de entrada da API.
+- `src/main/java/.../services`: regras de negócio.
+- `src/main/java/.../model`: entidades e enums.
+- `src/main/java/.../transfer`: DTOs.
+- `src/main/resources/db/migration`: scripts do Flyway.
+
+## Contato
+
+Projeto mantido por Henrique Azevedo. Para suporte ou contribuições, use os canais já indicados no projeto.

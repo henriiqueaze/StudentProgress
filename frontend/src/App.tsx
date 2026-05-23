@@ -112,7 +112,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     return undefined as T;
   }
 
-  if (response.status === 401 && storedToken) {
+  if ((response.status === 401 || response.status === 403) && storedToken) {
     clearStoredAuthSession();
     window.dispatchEvent(new Event("studentprogress:unauthorized"));
   }
@@ -138,6 +138,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new ApiError(
       errorBody?.message ||
         errorBody?.error ||
+        (response.status === 403
+          ? "Acesso negado. Faça login novamente."
+          : undefined) ||
         "Erro na comunicacao com a API.",
       status,
     );
@@ -147,6 +150,29 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 function App() {
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      const stored = localStorage.getItem("studentprogress.theme");
+      if (stored) return stored === "dark";
+    } catch {
+      /* ignore */
+    }
+
+    return (
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)")?.matches
+    );
+  });
+
+  useEffect(() => {
+    try {
+      if (isDark) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
+      localStorage.setItem("studentprogress.theme", isDark ? "dark" : "light");
+    } catch {
+      /* ignore */
+    }
+  }, [isDark]);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [authForm, setAuthForm] = useState<AuthForm>(emptyAuthForm);
   const [authLoading, setAuthLoading] = useState(false);
@@ -177,6 +203,9 @@ function App() {
   const [direction, setDirection] = useState<"asc" | "desc">("asc");
   const [activeTab, setActiveTab] = useState<TabKey>("register");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [studentPendingDelete, setStudentPendingDelete] =
+    useState<Student | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   function syncStudentCollections(updatedStudent: Student) {
     setStudents((previous) =>
@@ -228,7 +257,7 @@ function App() {
 
     const timeoutId = window.setTimeout(() => {
       setAlert(null);
-    }, 4000);
+    }, 3000);
 
     return () => window.clearTimeout(timeoutId);
   }, [alert]);
@@ -247,6 +276,10 @@ function App() {
     const lastItem = Math.min((currentPage + 1) * PAGE_SIZE, totalElements);
     return `${firstItem}-${lastItem} de ${totalElements}`;
   }, [currentPage, totalElements]);
+
+  const pageBackgroundClass = isDark
+    ? "bg-[radial-gradient(circle_at_8%_0%,rgba(2,6,23,0.7),transparent_30%),radial-gradient(circle_at_92%_12%,rgba(3,7,18,0.6),transparent_35%),linear-gradient(180deg,#03060a_0%,#04101a_40%,#04121a_100%)] text-slate-100"
+    : "bg-[radial-gradient(circle_at_top_left,rgba(9,86,126,0.2),transparent_30%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.16),transparent_28%),linear-gradient(180deg,#f1f7fb_0%,#eff7fa_42%,#e8f1f6_100%)] text-slate-900";
 
   const fetchStudentsPage = useCallback(
     async (page = 0, sortDirection = direction) => {
@@ -442,6 +475,33 @@ function App() {
     };
   }
 
+  function buildPatchPayload(form: StudentForm) {
+    const payload: Partial<Student> = {};
+
+    if (form.name.trim()) payload.name = form.name.trim();
+    if (form.birthDate) payload.birthDate = toIsoDate(form.birthDate);
+    if (form.cpf.trim()) payload.cpf = form.cpf.trim();
+    if (form.email.trim()) payload.email = form.email.trim();
+    if (form.registration.trim()) payload.registration = form.registration.trim();
+    if (form.course.trim()) payload.course = form.course.trim();
+    if (form.classSchool.trim()) payload.classSchool = form.classSchool.trim();
+
+    const hasAnyNoteInput = [form.note1, form.note2, form.note3].some(
+      (note) => note.trim() !== "",
+    );
+    const notes = collectNotes([form.note1, form.note2, form.note3]);
+
+    if (hasAnyNoteInput && notes.length !== 3) {
+      throw new Error("Para atualizar notas, preencha as 3 notas.");
+    }
+
+    if (notes.length === 3) {
+      payload.notes = notes;
+    }
+
+    return payload;
+  }
+
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -484,9 +544,18 @@ function App() {
     event.preventDefault();
 
     try {
-      const payload = buildStudentPayload(patchForm);
-      const updatedStudent = await request<Student>("/student", {
-        method: "PUT",
+      const studentId = Number(patchForm.id);
+      if (!Number.isFinite(studentId) || studentId <= 0) {
+        throw new Error("Selecione um aluno para atualizar.");
+      }
+
+      const payload = buildPatchPayload(patchForm);
+      if (Object.keys(payload).length === 0) {
+        throw new Error("Preencha ao menos um campo para atualizar.");
+      }
+
+      const updatedStudent = await request<Student>(`/student/${studentId}`, {
+        method: "PATCH",
         body: JSON.stringify(payload),
       });
 
@@ -507,21 +576,31 @@ function App() {
     }
   }
 
-  async function handleDelete(student: Student) {
-    if (!student.id) return;
-
-    const confirmed = window.confirm(
-      `Tem certeza que deseja excluir ${student.name}?`,
-    );
-
-    if (!confirmed) {
+  function handleDelete(student: Student) {
+    if (!student.id) {
       return;
     }
 
+    setStudentPendingDelete(student);
+  }
+
+  async function confirmDeleteStudent() {
+    if (!studentPendingDelete?.id) {
+      return;
+    }
+
+    setDeleteLoading(true);
+
     try {
-      await request<void>(`/student/${student.id}`, { method: "DELETE" });
-      setAlert({ type: "success", message: `Aluno ${student.name} removido.` });
-      removeStudentFromCollections(student.id);
+      await request<void>(`/student/${studentPendingDelete.id}`, {
+        method: "DELETE",
+      });
+      setAlert({
+        type: "success",
+        message: `Aluno ${studentPendingDelete.name} removido.`,
+      });
+      removeStudentFromCollections(studentPendingDelete.id);
+      setStudentPendingDelete(null);
 
       const targetPage =
         students.length === 1 && currentPage > 0
@@ -536,6 +615,8 @@ function App() {
             ? error.message
             : "Nao foi possivel remover o aluno.",
       });
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -545,7 +626,11 @@ function App() {
     event.preventDefault();
 
     const numericId = Number(averageSelectedStudentId);
-    if (Number.isNaN(numericId)) {
+    if (
+      !averageSelectedStudentId.trim() ||
+      !Number.isFinite(numericId) ||
+      numericId <= 0
+    ) {
       setAlert({
         type: "error",
         message: "Selecione um aluno para calcular a média.",
@@ -623,7 +708,6 @@ function App() {
     });
     setPartialStudentSearch(student.name);
     setActiveTab("partial");
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleAverageStudentSearchChange(value: string) {
@@ -696,9 +780,9 @@ function App() {
 
   if (!authToken) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(9,86,126,0.2),transparent_30%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.16),transparent_28%),linear-gradient(180deg,#f1f7fb_0%,#eff7fa_42%,#e8f1f6_100%)] text-slate-900">
+      <main className={`min-h-screen ${pageBackgroundClass}`}>
         <div className="mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 py-6 sm:px-6 lg:px-8">
-          {alert ? <AlertBanner alert={alert} /> : null}
+          {alert ? <AlertBanner alert={alert} onDismiss={() => setAlert(null)} /> : null}
           <AuthPanel
             mode={authMode}
             form={authForm}
@@ -708,12 +792,29 @@ function App() {
             onSubmit={handleAuthSubmit}
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setIsDark((p) => !p)}
+          aria-label="Alternar tema"
+          className="fixed right-6 bottom-6 z-50 rounded-full p-3 bg-white/90 text-slate-900 shadow-lg border dark:bg-slate-800 dark:text-white dark:border-slate-700"
+        >
+          {isDark ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0b1220" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="4" stroke="#0b1220" fill="#0b1220" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#0b1220" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+            </svg>
+          )}
+        </button>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(9,86,126,0.2),transparent_30%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.16),transparent_28%),linear-gradient(180deg,#f1f7fb_0%,#eff7fa_42%,#e8f1f6_100%)] text-slate-900">
+    <main className={`min-h-screen ${pageBackgroundClass}`}>
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
         <AppHeader
           logoUrl={LOGO_URL}
@@ -727,7 +828,7 @@ function App() {
           onChange={setActiveTab}
         />
 
-        {alert ? <AlertBanner alert={alert} /> : null}
+        {alert ? <AlertBanner alert={alert} onDismiss={() => setAlert(null)} /> : null}
 
         {activeTab === "register" ? (
           <RegisterTab
@@ -793,11 +894,88 @@ function App() {
             onEdit={loadStudentIntoPatch}
             onAverage={loadAverageFromStudent}
             onDelete={(student) => {
-              void handleDelete(student);
+              handleDelete(student);
             }}
           />
         ) : null}
       </div>
+
+      {studentPendingDelete ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/55 px-4"
+          role="presentation"
+          onClick={() => {
+            if (!deleteLoading) {
+              setStudentPendingDelete(null);
+            }
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-student-title"
+            aria-describedby="delete-student-description"
+            className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-rose-600 dark:text-rose-300">
+              Confirmação
+            </p>
+            <h3
+              id="delete-student-title"
+              className="mt-2 text-xl font-semibold text-slate-950 dark:text-slate-100"
+            >
+              Excluir aluno permanentemente?
+            </h3>
+            <p
+              id="delete-student-description"
+              className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300"
+            >
+              Você está prestes a excluir <strong>{studentPendingDelete.name}</strong>.
+              Essa ação não pode ser desfeita.
+            </p>
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setStudentPendingDelete(null)}
+                disabled={deleteLoading}
+                className="rounded-full border border-slate-200 bg-slate-50 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void confirmDeleteStudent();
+                }}
+                disabled={deleteLoading}
+                className="rounded-full border border-rose-300 bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60 dark:border-rose-600"
+              >
+                {deleteLoading ? "Excluindo..." : "Sim, excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={() => setIsDark((p) => !p)}
+        aria-label="Alternar tema"
+        className="fixed right-6 bottom-6 z-50 rounded-full p-3 bg-white/90 text-slate-900 shadow-lg border dark:bg-slate-800 dark:text-white dark:border-slate-700"
+      >
+        {isDark ? (
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0b1220" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <circle cx="12" cy="12" r="4" stroke="#0b1220" fill="#0b1220" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke="#0b1220" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+        )}
+      </button>
     </main>
   );
 }
