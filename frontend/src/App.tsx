@@ -32,8 +32,6 @@ import {
   toIsoDate,
 } from "./utils/studentFormatters";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 const LOGO_URL = "/student-progress-logo.png";
 const AUTH_TOKEN_KEY = "studentprogress.auth.token";
 const AUTH_USER_KEY = "studentprogress.auth.user";
@@ -67,6 +65,17 @@ const emptyAuthForm: AuthForm = {
   confirmPassword: "",
 };
 
+function getApiBaseUrl() {
+  const configuredBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+
+  try {
+    return new URL(configuredBaseUrl).origin;
+  } catch {
+    return configuredBaseUrl.replace(/\/+$/, "");
+  }
+}
+
 class ApiError extends Error {
   status?: number;
 
@@ -98,7 +107,7 @@ function clearStoredAuthSession() {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...options,
     headers: {
       Accept: "application/json",

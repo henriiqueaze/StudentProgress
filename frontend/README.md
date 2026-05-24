@@ -36,6 +36,8 @@ Se precisar apontar o front para uma API diferente da padrão, crie um arquivo `
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
+Use a URL base do backend.
+
 ## Scripts
 
 Na pasta `frontend`:
